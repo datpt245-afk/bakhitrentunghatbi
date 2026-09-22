@@ -8,17 +8,18 @@
 <button class="btn primary" style="width:100%;font-size:20px;padding:15px" onclick="join()">VÀO CHUÔNG</button>
 </div><div id="play" style="display:none"><div class="muted" id="me"></div><button id="buzz" class="buzz" onclick="buzz()">🔔<br>BẤM CHUÔNG</button><div id="status" class="status">Đang chờ MC mở câu hỏi...</div></div></div>
 <script src="/socket.io/socket.io.js"></script><script>
-let group=sessionStorage.getItem("userGroup")||"1";const s=io();let name="";let currentState=null;
-const groupSelect=document.getElementById("groupSelect");groupSelect.value=group;
-team.textContent="NHÓM "+group;
+let group="";const s=io();let name="";let currentState=null;
+const groupSelect=document.getElementById("groupSelect");
+team.textContent="NHẬP THÔNG TIN ĐỂ VÀO CHUÔNG";
 
 // Tự động khôi phục tên nếu đã từng nhập
 window.addEventListener("DOMContentLoaded", () => {
   const savedName = sessionStorage.getItem("userName");
   const savedGroup = sessionStorage.getItem("userGroup");
-  if (savedGroup) { group=savedGroup; groupSelect.value=group; team.textContent="NHÓM "+group; }
   if (savedName && savedGroup) {
     document.getElementById("name").value = savedName;
+    group=savedGroup;
+    groupSelect.value=group;
     join();
   }
 });
@@ -26,8 +27,8 @@ window.addEventListener("DOMContentLoaded", () => {
 function join(){
   name=document.getElementById("name").value.trim();
   group=groupSelect.value;
-  team.textContent="NHÓM "+group;
   if(!name)return alert("Nhập tên trước nhé!");
+  team.textContent="NHÓM "+group;
   sessionStorage.setItem("userName", name);
   sessionStorage.setItem("userGroup", group);
   s.emit("joinMember",{group,name});

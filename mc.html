@@ -375,7 +375,7 @@
 
       // Render Link kết nối 5 nhóm
       qs("links").innerHTML = [1, 2, 3, 4, 5].map(i => 
-        `<p style="margin: 6px 0; font-size: 13px;">🔔 <b>Link chuông chung:</b> <code>${location.origin}/</code></p>`
+        `<p style="margin: 6px 0; font-size: 13px;">🔔 <b>Nhóm ${i}:</b> <code>${location.origin}/?group=${i}</code></p>`
       ).join("");
 
       // Cập nhật câu hỏi hiện tại
@@ -404,7 +404,8 @@
       if (!state) return;
       const nextIdx = state.currentQuestion + 1;
       const btn = qs("nextBtn");
-      const busy = !!state.activeResponder || !!state.pendingBuff || !!state.pendingAnswer;
+      const buffStillNeedsTarget = !!state.pendingBuff && state.pendingBuff.buffId === 4 && !state.pendingBuff.target;
+      const busy = !!state.activeResponder || !!state.pendingAnswer || buffStillNeedsTarget;
       if (!state.questions.length) {
         btn.textContent = "▶️ MỞ CÂU ĐẦU TIÊN";
         btn.disabled = true;
@@ -541,12 +542,15 @@
     });
 
     socket.on("buffApplied", x => {
-      const names = {1:"Cướp 2 điểm",2:"Nhân đôi điểm",3:"Vấp đá",4:"Hoán đổi điểm",5:"Tăng tốc",6:"Mất trắng"};
+      const names = {1:"Cướp 2 điểm",2:"Nhân đôi điểm",3:"Vấp đá",4:"Hoán đổi điểm",5:"Tăng tốc",6:"Cân bằng điểm"};
       qs("buffStatus").textContent = `✨ Đã áp dụng buff: ${names[x.buffId] || "Buff"}. MC có thể mở câu tiếp theo.`;
+      updateNextButton();
     });
 
     socket.on("buffFinished", () => {
       qs("status").textContent = "Buff đã xử lý xong. MC tự quyết định khi nào mở câu tiếp theo.";
+      if (state) { state.pendingBuff = null; state.activeResponder = null; state.pendingAnswer = null; }
+      updateNextButton();
     });
 
     socket.on("questionSkipped", () => {

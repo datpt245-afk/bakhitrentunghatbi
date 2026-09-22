@@ -19,7 +19,7 @@ const BUFFS = {
   3: { name: "Vấp đá", desc: "Vịt đâm vào hòn đá, mất 1 điểm và lùi 1 ô.", rare: false },
   4: { name: "Hoán đổi điểm", desc: "Đổi toàn bộ điểm với một đội khác.", rare: false },
   5: { name: "Tăng tốc", desc: "Vịt của đội tiến 5 ô.", rare: false },
-  6: { name: "Mất trắng", desc: "Mất toàn bộ điểm hiện có.", rare: true }
+  6: { name: "Cân bằng điểm", desc: "Điểm của đội được đưa về bằng với đội đang có ít điểm nhất.", rare: true }
 };
 
 let game = {
@@ -39,8 +39,9 @@ let game = {
   wrongPending: null,
   answerRevealed: false,
   pendingBuff: null,
-  lastStealTarget: null,
-  scoring: { teamStep: 2, personalPoint: 1 }
+  scoring: { teamStep: 2, personalPoint: 1 },
+  boxStats: { openedSince4: 0, openedSince6: 0, selected4: 0, selected6: 0 },
+  lastStealTarget: null
 };
 
 function loadQuestions() {
@@ -93,10 +94,46 @@ function triggerNextQuestion() {
   io.emit("state", snapshot());
 }
 
-function randomBuff() {
-  // Buff 1-5: 18.75% each; Buff 6: 6.25%.
-  const pool = [1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6];
-  return pool[Math.floor(Math.random() * pool.length)];
+function teamRanking() {
+  return Object.keys(game.teams).sort((a, b) => {
+    const scoreDiff = (Number(game.teams[b].score) || 0) - (Number(game.teams[a].score) || 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    return Number(b) - Number(a);
+  });
+}
+
+function buff6WeightForGroup(group) {
+  const rank = teamRanking().indexOf(String(group)) + 1;
+  // Buff 6 is a balancing buff: strongly favor the teams currently in 1st/2nd.
+  return [8, 5, 2, 0.7, 0.2][rank - 1] || 0.2;
+}
+
+function weightedBuffForGroup(group) {
+  const weights = { 1: 25, 2: 25, 3: 23, 4: 7, 5: 18, 6: 2 * buff6WeightForGroup(group) };
+  const total = Object.values(weights).reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (const id of [1,2,3,4,5,6]) {
+    r -= weights[id];
+    if (r <= 0) return id;
+  }
+  return 1;
+}
+
+function makeBuffChoices(group) {
+  game.boxStats.openedSince4 += 1;
+  game.boxStats.openedSince6 += 1;
+
+  // Pity system: if a rare buff has gone unchosen for too long, all 3 boxes become it.
+  // This still only affects the random selection INSIDE the blind boxes.
+  if (game.boxStats.selected4 < 2 && game.boxStats.openedSince4 >= 12) {
+    return [4, 4, 4];
+  }
+  const responderRank = teamRanking().indexOf(String(group)) + 1;
+  if (game.boxStats.selected6 < 1 && game.boxStats.openedSince6 >= 20 && responderRank <= 2) {
+    return [6, 6, 6];
+  }
+
+  return [weightedBuffForGroup(group), weightedBuffForGroup(group), weightedBuffForGroup(group)];
 }
 
 function otherGroups(group) {
@@ -118,8 +155,8 @@ function awardCorrect() {
   }
   game.questionOpen = false;
   game.answerRevealed = true;
-  const buffId = randomBuff();
-  game.pendingBuff = { group: g, name: r.name, buffId, chosen: false, target: null };
+  const buffChoices = makeBuffChoices(g);
+  game.pendingBuff = { group: g, name: r.name, buffChoices, chosen: false, target: null };
   io.emit("result", {
     correct: true,
     name: r.name,
@@ -127,7 +164,7 @@ function awardCorrect() {
     teamStep: base,
     personalPoint: Math.max(1, Number(game.scoring.personalPoint) || 1)
   });
-  io.emit("buffChoiceOpened", { group: g, name: r.name });
+  io.emit("buffChoiceOpened", { group: g, name: r.name, choices: buffChoices });
   io.emit("state", snapshot());
 }
 
@@ -180,6 +217,11 @@ io.on("connection", socket => {
   });
 
   socket.on("nextQuestion", () => {
+    // Sau khi đã chọn và áp dụng buff, cho phép MC chuyển câu ngay cả khi
+    // client MC chưa kịp nhận state cuối cùng. Buff 4 vẫn phải chọn mục tiêu trước.
+    if (game.pendingBuff && game.pendingBuff.chosen && game.pendingBuff.buffId !== 4) {
+      finishBuff();
+    }
     if (game.questionOpen || game.pendingBuff || game.pendingAnswer) return;
     triggerNextQuestion();
   });
@@ -236,9 +278,14 @@ io.on("connection", socket => {
     p.chosen = true;
     p.choice = Number(choice);
     io.emit("buffBoxChosen", { group: p.group, name: p.name, choice: Number(choice) });
-    const buffId = p.buffId;
-    io.emit("buffRevealed", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId] });
-    io.emit("buffRevealedMC", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId] });
+    const buffId = p.buffChoices[Number(choice)];
+    p.buffId = buffId;
+    if (buffId === 4) game.boxStats.selected4 += 1;
+    if (buffId === 6) game.boxStats.selected6 += 1;
+    if (buffId === 4) game.boxStats.openedSince4 = 0;
+    if (buffId === 6) game.boxStats.openedSince6 = 0;
+    io.emit("buffRevealed", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId], choices: p.buffChoices });
+    io.emit("buffRevealedMC", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId], choices: p.buffChoices });
     if (buffId === 1) applyBuff1(p);
     else if (buffId === 2) applyBuff2(p);
     else if (buffId === 3) applyBuff3(p);
@@ -255,27 +302,24 @@ io.on("connection", socket => {
     if (!game.teams[to] || to === from) return;
     const a = game.teams[from], b = game.teams[to];
     [a.score, b.score] = [b.score, a.score];
-    [a.duckPos, b.duckPos] = [b.duckPos, a.duckPos];
     io.emit("buffApplied", { group: from, buffId: 4, targetGroup: to });
     finishBuff();
   });
 
   function applyBuff1(p) {
     let choices = otherGroups(p.group).filter(g => game.teams[g].score > 0);
-    // Không cho cùng một đội bị random cướp 2 lần liên tiếp nếu vẫn còn lựa chọn khác.
-    const nonRepeatChoices = choices.filter(g => g !== game.lastStealTarget);
-    if (nonRepeatChoices.length) choices = nonRepeatChoices;
+    if (choices.length > 1 && game.lastStealTarget && choices.includes(String(game.lastStealTarget))) {
+      choices = choices.filter(g => g !== String(game.lastStealTarget));
+    }
     if (choices.length) {
       const target = choices[Math.floor(Math.random() * choices.length)];
-      const targetPosBefore = Number(game.teams[target].duckPos) || 0;
-      const thiefPosBefore = Number(game.teams[p.group].duckPos) || 0;
+      game.lastStealTarget = target;
       const amount = Math.min(2, game.teams[target].score);
       game.teams[target].score -= amount;
-      game.teams[target].duckPos = Math.max(0, targetPosBefore - amount);
+      game.teams[target].duckPos = Math.max(0, game.teams[target].duckPos - amount);
       game.teams[p.group].score += amount;
       game.teams[p.group].duckPos += amount;
-      game.lastStealTarget = target;
-      io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: target, amount, thiefPosBefore, targetPosBefore, thiefPosAfter: game.teams[p.group].duckPos, targetPosAfter: game.teams[target].duckPos });
+      io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: target, amount });
     } else {
       io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: null, amount: 0 });
     }
@@ -302,9 +346,14 @@ io.on("connection", socket => {
     finishBuff();
   }
   function applyBuff6(p) {
-    game.teams[p.group].score = 0;
-    game.teams[p.group].duckPos = 0;
-    io.emit("buffApplied", { group: p.group, buffId: 6, amount: 0 });
+    const ranked = teamRanking();
+    const lowestScore = Math.min(...Object.values(game.teams).map(t => Number(t.score) || 0));
+    const lowestGroups = ranked.filter(g => (Number(game.teams[g].score) || 0) === lowestScore);
+    const target = lowestGroups[Math.floor(Math.random() * lowestGroups.length)];
+    const team = game.teams[p.group];
+    const oldScore = Number(team.score) || 0;
+    team.score = lowestScore;
+    io.emit("buffApplied", { group: p.group, buffId: 6, targetGroup: target, oldScore, newScore: lowestScore });
     finishBuff();
   }
   function finishBuff() {
@@ -341,6 +390,7 @@ io.on("connection", socket => {
     game.wrongPending = null;
     game.answerRevealed = false;
     game.pendingBuff = null;
+    game.boxStats = { openedSince4: 0, openedSince6: 0, selected4: 0, selected6: 0 };
     game.lastStealTarget = null;
     io.emit("fullReset");
     io.emit("state", snapshot());

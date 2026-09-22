@@ -148,14 +148,31 @@
     }
     #blindBoxArea { display:none; margin:18px auto 24px; text-align:center; max-width:1050px; }
     .blind-title { font-size:30px; font-weight:1000; color:#d8b4fe; margin-bottom:8px; text-transform:uppercase; }
+    .swap-target-panel { display:none; margin:14px auto 0; max-width:900px; }
+    .swap-target-title { font-weight:900; color:#f8fafc; margin-bottom:10px; }
+    .swap-target-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+    .swap-target-btn { border:1px solid rgba(255,255,255,.18); background:#1e293b; color:#fff; border-radius:10px; padding:12px 8px; font-weight:900; cursor:pointer; }
+    .swap-target-btn:hover { transform:translateY(-1px); background:#334155; }
+    .effect-layer { position:fixed; inset:0; pointer-events:none; z-index:100; overflow:hidden; }
+    .hammer-fly { position:absolute; font-size:72px; animation:hammerFly .9s ease-in-out forwards; }
+    .bonk-text { position:absolute; font-size:54px; font-weight:1000; color:#facc15; text-shadow:4px 4px 0 #7c2d12, 0 0 18px rgba(250,204,21,.7); animation:bonkPop .75s ease-out forwards; }
+    @keyframes hammerFly { 0%{transform:translate(0,0) rotate(-35deg) scale(.6);opacity:0} 20%{opacity:1} 70%{transform:translate(45vw,-8vh) rotate(25deg) scale(1.1);opacity:1} 100%{transform:translate(55vw,0) rotate(15deg) scale(.8);opacity:0} }
+    @keyframes bonkPop { 0%{transform:scale(.2) rotate(-15deg);opacity:0} 35%{transform:scale(1.25) rotate(8deg);opacity:1} 100%{transform:scale(1) translateY(-35px);opacity:0} }
+    .buff6-flash { animation:buff6Flash .7s ease-out; }
+    @keyframes buff6Flash { 0%,100%{filter:none} 35%{filter:brightness(1.8) saturate(.5)} }
     .blind-sub { color:#cbd5e1; font-size:18px; margin-bottom:18px; }
     .blind-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
-    .blind-box { min-height:250px; cursor:pointer; border-radius:24px; border:3px solid #a855f7; background:linear-gradient(145deg,#312e81,#581c87); color:#fff; box-shadow:0 15px 35px rgba(0,0,0,.45),0 0 28px rgba(168,85,247,.22); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:.25s; }
-    .blind-box .icon { font-size:86px; line-height:1; }
-    .blind-box .label { font-size:28px; font-weight:1000; margin-top:18px; }
-    .blind-box:hover { transform:scale(1.03); }
-    .blind-box.chosen { border-color:#facc15; background:linear-gradient(145deg,#854d0e,#a16207); transform:scale(1.04); box-shadow:0 0 45px rgba(250,204,21,.45); }
-    .blind-box.revealed { border-color:#4ade80; background:linear-gradient(145deg,#14532d,#166534); }
+    .blind-box { min-height:250px; cursor:pointer; border-radius:28px; border:4px solid transparent; color:#fff; box-shadow:0 18px 40px rgba(0,0,0,.48), inset 0 0 35px rgba(255,255,255,.12); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:.28s; position:relative; overflow:hidden; }
+    .blind-box::before { content:""; position:absolute; inset:-40%; background:linear-gradient(120deg,transparent 35%,rgba(255,255,255,.28) 48%,transparent 60%); transform:translateX(-35%) rotate(12deg); transition:.7s; }
+    .blind-box:hover::before { transform:translateX(35%) rotate(12deg); }
+    .blind-box:nth-child(1) { background:linear-gradient(145deg,#ef4444,#f97316,#facc15); border-color:#fecaca; }
+    .blind-box:nth-child(2) { background:linear-gradient(145deg,#06b6d4,#2563eb,#7c3aed); border-color:#bae6fd; }
+    .blind-box:nth-child(3) { background:linear-gradient(145deg,#22c55e,#14b8a6,#eab308); border-color:#bbf7d0; }
+    .blind-box .icon { font-size:86px; line-height:1; filter:drop-shadow(0 5px 5px rgba(0,0,0,.35)); position:relative; z-index:1; }
+    .blind-box .label { font-size:30px; font-weight:1000; margin-top:18px; text-shadow:2px 3px 0 rgba(0,0,0,.3); position:relative; z-index:1; }
+    .blind-box:hover { transform:translateY(-7px) scale(1.035); box-shadow:0 25px 50px rgba(0,0,0,.55),0 0 35px rgba(255,255,255,.2); }
+    .blind-box.chosen { border-color:#fff; background:linear-gradient(145deg,#facc15,#f97316,#ef4444); transform:scale(1.06); box-shadow:0 0 55px rgba(250,204,21,.75); }
+    .blind-box.revealed { border-color:#fff; background:linear-gradient(145deg,#a855f7,#ec4899,#f43f5e); box-shadow:0 0 50px rgba(236,72,153,.6); }
     @media (max-width:800px) { .blind-grid{grid-template-columns:1fr}.blind-box{min-height:180px} }
 
     /* ĐỒNG HỒ ĐẾM NGƯỢC 5 GIÂY */
@@ -355,51 +372,6 @@
       100% { transform: translateX(-50%) scale(0.8) translateY(-12px); opacity: 0; }
     }
     .duck-hit { animation: duckHit 0.65s ease-in-out !important; }
-    .duck-bonk { animation: duckBonk 0.55s ease-in-out !important; }
-    @keyframes duckBonk {
-      0% { transform: rotate(0deg) translateY(0); }
-      25% { transform: rotate(-18deg) translateY(5px); }
-      45% { transform: rotate(15deg) translateY(-2px); }
-      65% { transform: rotate(-10deg) translateY(4px); }
-      100% { transform: rotate(0deg) translateY(0); }
-    }
-    .steal-flyer {
-      position: fixed;
-      z-index: 99999;
-      pointer-events: none;
-      font-size: 58px;
-      line-height: 1;
-      transform-origin: center center;
-      filter: drop-shadow(0 8px 5px rgba(0,0,0,.45));
-      transition: left .78s cubic-bezier(.2,.85,.25,1), top .78s cubic-bezier(.2,.85,.25,1), transform .78s cubic-bezier(.2,.85,.25,1);
-    }
-    .steal-flyer .fly-duck { display:inline-block; transform: scaleX(-1); }
-    .steal-hammer {
-      position:absolute;
-      right:-18px;
-      top:-22px;
-      font-size:48px;
-      opacity:0;
-      transform:rotate(-35deg) scale(.5);
-    }
-    .steal-hammer.bonk { animation: hammerBonk .42s cubic-bezier(.2,.8,.2,1) forwards; }
-    @keyframes hammerBonk {
-      0% { opacity:0; transform:rotate(-55deg) scale(.55) translate(-12px,-12px); }
-      35% { opacity:1; transform:rotate(25deg) scale(1.12) translate(5px,8px); }
-      55% { opacity:1; transform:rotate(-8deg) scale(1) translate(0,0); }
-      100% { opacity:0; transform:rotate(-35deg) scale(.8) translate(-8px,-4px); }
-    }
-    .bonk-text {
-      position:absolute; left:50%; top:-45px; transform:translateX(-50%) scale(.4);
-      font-size:30px; font-weight:1000; color:#facc15; text-shadow:2px 2px 0 #111, -1px -1px 0 #111; opacity:0;
-      white-space:nowrap;
-    }
-    .bonk-text.show { animation: bonkText .7s ease-out forwards; }
-    @keyframes bonkText {
-      0% { opacity:0; transform:translateX(-50%) scale(.4) rotate(-8deg); }
-      25% { opacity:1; transform:translateX(-50%) scale(1.2) rotate(5deg); }
-      100% { opacity:0; transform:translateX(-50%) scale(1) translateY(-18px) rotate(-3deg); }
-    }
     @keyframes duckHit {
       0%, 100% { transform: translateX(0) rotate(0deg); }
       25% { transform: translateX(8px) rotate(12deg); }
@@ -450,6 +422,8 @@
     </div>
   </div>
 
+  <div id="effectLayer" class="effect-layer"></div>
+
   <div class="screen-container">
     <button id="audioToggleBtn" class="audio-control-btn" onclick="toggleAudio()">🎵 Nhạc Chill: BẬT</button>
 
@@ -473,9 +447,13 @@
       <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
       <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
       <div class="blind-grid">
-        <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">📦</div><div class="label">HỘP 1</div></div>
-        <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">📦</div><div class="label">HỘP 2</div></div>
-        <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">📦</div><div class="label">HỘP 3</div></div>
+        <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">🎁</div><div class="label">HỘP 1</div></div>
+        <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">🎀</div><div class="label">HỘP 2</div></div>
+        <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
+      </div>
+      <div id="swapTargetPanel" class="swap-target-panel">
+        <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
+        <div id="swapTargetGrid" class="swap-target-grid"></div>
       </div>
     </div>
 
@@ -491,7 +469,6 @@
     let currentGameState = null;
 
     let soundEnabled = true;
-    let stealAnimating = false;
 
     // --- NHẠC NỀN LOFI CHILL ---
     const chillBGM = new Audio("https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3");
@@ -569,12 +546,6 @@
       } else if (type === 'buff1') {
         // Cướp điểm: mischievous / jackpot
         tone(392,now,.14,'square',.15,523); tone(523,now+.12,.14,'square',.15,659); tone(659,now+.24,.35,'triangle',.18,330);
-      } else if (type === 'bonk') {
-        // BONK: cú gõ búa ngắn, trầm và hài
-        tone(155,now,.12,'square',.24,95);
-        tone(82,now+.055,.28,'sawtooth',.20,58);
-        noiseBurst(now,0.12,0.16);
-        tone(260,now+.08,.10,'triangle',.10,130);
       } else if (type === 'buff2') {
         // Nhân đôi: power-up tăng cao
         [392,523,659,784,1046].forEach((f,i)=>tone(f,now+i*.08,.24,'triangle',.18));
@@ -589,7 +560,7 @@
         // Tăng tốc: race boost
         tone(220,now,.65,'sawtooth',.12,1400); tone(880,now+.20,.55,'triangle',.16,1760); tone(1760,now+.45,.55,'sine',.20);
       } else if (type === 'buff6') {
-        // Mất trắng: dramatic drop
+        // Cân bằng điểm: dramatic equalizer
         tone(440,now,.25,'triangle',.15,330); tone(330,now+.20,.28,'triangle',.14,220); tone(220,now+.42,.80,'sawtooth',.18,55);
       }
     }
@@ -647,7 +618,7 @@
 
     socket.on("state", state => {
       currentGameState = state;
-      if (!stealAnimating) renderRace(state);
+      renderRace(state);
       renderScores(state);
 
       if (state.started || state.currentQuestion >= 0) {
@@ -695,6 +666,36 @@
     function selectBuffBox(choice) {
       if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.chosen) return;
       socket.emit("chooseBuff", { choice });
+    }
+
+    function selectSwapTarget(group) {
+      if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.buffId !== 4 || !currentGameState.pendingBuff.chosen) return;
+      socket.emit("chooseSwapTarget", { targetGroup: String(group) });
+      qs("swapTargetPanel").style.display = "none";
+    }
+
+    function showSwapTargets(sourceGroup) {
+      const grid = qs("swapTargetGrid");
+      grid.innerHTML = Object.keys(currentGameState.teams).filter(g => String(g) !== String(sourceGroup)).map(g => {
+        const t = currentGameState.teams[g];
+        return `<button class="swap-target-btn" onclick="selectSwapTarget('${g}')">NHÓM ${g}<br>${Number(t.score)||0} điểm</button>`;
+      }).join("");
+      qs("swapTargetPanel").style.display = "block";
+    }
+
+    function showStealHit(x) {
+      const layer = qs("effectLayer");
+      const fromLane = document.getElementById("lane-" + String(x.group));
+      const toLane = x.targetGroup ? document.getElementById("lane-" + String(x.targetGroup)) : null;
+      const fromDuck = fromLane?.querySelector(".duck-wrapper");
+      const toDuck = toLane?.querySelector(".duck-wrapper");
+      const hammer = document.createElement("div");
+      hammer.className = "hammer-fly"; hammer.textContent = "🔨"; hammer.style.left = "18vw"; hammer.style.top = "42vh";
+      layer.appendChild(hammer);
+      if (toDuck) { toDuck.classList.remove("duck-hit"); void toDuck.offsetWidth; toDuck.classList.add("duck-hit"); }
+      const bonk = document.createElement("div"); bonk.className = "bonk-text"; bonk.textContent = "BONK!";
+      bonk.style.left = toDuck ? "62vw" : "50vw"; bonk.style.top = "40vh"; layer.appendChild(bonk);
+      setTimeout(()=>{ hammer.remove(); bonk.remove(); },1000);
     }
 
     function getDuckSVG(mainColor, wingColor) {
@@ -830,7 +831,10 @@
     socket.on("buffChoiceOpened", x => {
       playSound("box");
       qs("blindBoxArea").style.display = "block";
-      [0,1,2].forEach(i => { qs("blindBox"+i).classList.remove("chosen","revealed"); qs("blindBox"+i).innerHTML = `<div class="icon">📦</div><div class="label">HỘP ${i+1}</div>`; });
+      qs("swapTargetPanel").style.display = "none";
+      [0,1,2].forEach(i => { qs("blindBox"+i).classList.remove("chosen","revealed");
+        const icons = ["🎁","🎀","💎"];
+        qs("blindBox"+i).innerHTML = `<div class="icon">${icons[i]}</div><div class="label">HỘP ${i+1}</div>`; });
       qs("screenWinner").textContent = `🎁 ${x.name} (NHÓM ${x.group}) TRẢ LỜI ĐÚNG!`;
       qs("screenStatus").textContent = "Đội trả lời hãy nói với MC: chọn Hộp 1, Hộp 2 hoặc Hộp 3.";
     });
@@ -852,6 +856,7 @@
       }
       qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
       qs("screenStatus").textContent = x.buff.desc;
+      if (Number(x.buffId) === 4) showSwapTargets(x.group);
     });
 
     socket.on("buffRevealedMC", x => {
@@ -865,63 +870,28 @@
         }
         qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
         qs("screenStatus").textContent = x.buff.desc;
+        if (Number(x.buffId) === 4) showSwapTargets(x.group);
       }
     });
 
-
-    function animateSteal(x) {
-      const from = String(x.group);
-      const to = String(x.targetGroup);
-      const thief = document.querySelector(`#lane-${from} .duck-wrapper`);
-      const victim = document.querySelector(`#lane-${to} .duck-wrapper`);
-      if (!thief || !victim) {
-        if (currentGameState) renderRace(currentGameState);
-        return;
-      }
-
-      stealAnimating = true;
-      const a = thief.getBoundingClientRect();
-      const b = victim.getBoundingClientRect();
-      const flyer = document.createElement('div');
-      flyer.className = 'steal-flyer';
-      flyer.style.left = (a.left + a.width/2 - 28) + 'px';
-      flyer.style.top = (a.top + a.height/2 - 30) + 'px';
-      flyer.innerHTML = `<span class="fly-duck">🦆</span><span class="steal-hammer">🔨</span><span class="bonk-text">BONK!</span>`;
-      document.body.appendChild(flyer);
-
-      requestAnimationFrame(() => {
-        flyer.style.transform = 'rotate(-8deg) scale(1.12)';
-        flyer.style.left = (b.left + b.width/2 - 28) + 'px';
-        flyer.style.top = (b.top + b.height/2 - 30) + 'px';
-      });
-
-      setTimeout(() => {
-        const hammer = flyer.querySelector('.steal-hammer');
-        const text = flyer.querySelector('.bonk-text');
-        if (hammer) hammer.classList.add('bonk');
-        if (text) text.classList.add('show');
-        playSound('bonk');
-        victim.classList.remove('duck-bonk');
-        void victim.offsetWidth;
-        victim.classList.add('duck-bonk');
-      }, 780);
-
-      setTimeout(() => {
-        flyer.remove();
-        if (currentGameState) renderRace(currentGameState);
-        stealAnimating = false;
-      }, 1850);
-    }
-
     socket.on("buffApplied", x => {
-      if (Number(x.buffId) === 1 && x.targetGroup) {
-        animateSteal(x);
-        qs("screenWinner").textContent = `🔨 NHÓM ${x.group} CƯỚP ${x.amount} ĐIỂM CỦA NHÓM ${x.targetGroup}!`;
-        qs("screenStatus").textContent = `🦆 Vịt nhóm ${x.group} bay sang BONK vịt nhóm ${x.targetGroup}!`;
+      if (Number(x.buffId) === 1) {
+        showStealHit(x);
+        qs("screenWinner").textContent = `🔨 NHÓM ${x.group} CƯỚP 2 ĐIỂM TỪ NHÓM ${x.targetGroup || "không có mục tiêu"}!`;
+        qs("screenStatus").textContent = x.amount ? `BONK! Cướp ${x.amount} điểm và chuyển về nhóm ${x.group}.` : "Không có nhóm nào đủ điểm để cướp.";
       } else if (Number(x.buffId) === 3) {
         showStoneHit(x);
         qs("screenWinner").textContent = `🪨 NHÓM ${x.group} VẤP ĐÁ!`;
         qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm và lùi 1 ô!";
+      } else if (Number(x.buffId) === 4) {
+        qs("swapTargetPanel").style.display = "none";
+        qs("screenWinner").textContent = `🔄 NHÓM ${x.group} ↔ NHÓM ${x.targetGroup}`;
+        qs("screenStatus").textContent = "Điểm của hai nhóm đã được hoán đổi.";
+      } else if (Number(x.buffId) === 6) {
+        qs("screenWinner").textContent = `⚖️ NHÓM ${x.group} CÂN BẰNG ĐIỂM!`;
+        qs("screenStatus").textContent = `Điểm được đưa về bằng nhóm ${x.targetGroup} — ${x.newScore} điểm.`;
+        const lane = document.getElementById("lane-" + String(x.group));
+        if (lane) { lane.classList.remove("buff6-flash"); void lane.offsetWidth; lane.classList.add("buff6-flash"); }
       } else {
         qs("screenStatus").textContent = "✨ Buff đã được áp dụng. MC tự quyết định khi nào mở câu tiếp theo.";
       }
