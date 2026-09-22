@@ -150,9 +150,10 @@
     .blind-title { font-size:30px; font-weight:1000; color:#d8b4fe; margin-bottom:8px; text-transform:uppercase; }
     .blind-sub { color:#cbd5e1; font-size:18px; margin-bottom:18px; }
     .blind-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
-    .blind-box { min-height:250px; border-radius:24px; border:3px solid #a855f7; background:linear-gradient(145deg,#312e81,#581c87); color:#fff; box-shadow:0 15px 35px rgba(0,0,0,.45),0 0 28px rgba(168,85,247,.22); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:.25s; }
+    .blind-box { min-height:250px; cursor:pointer; border-radius:24px; border:3px solid #a855f7; background:linear-gradient(145deg,#312e81,#581c87); color:#fff; box-shadow:0 15px 35px rgba(0,0,0,.45),0 0 28px rgba(168,85,247,.22); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:.25s; }
     .blind-box .icon { font-size:86px; line-height:1; }
     .blind-box .label { font-size:28px; font-weight:1000; margin-top:18px; }
+    .blind-box:hover { transform:scale(1.03); }
     .blind-box.chosen { border-color:#facc15; background:linear-gradient(145deg,#854d0e,#a16207); transform:scale(1.04); box-shadow:0 0 45px rgba(250,204,21,.45); }
     .blind-box.revealed { border-color:#4ade80; background:linear-gradient(145deg,#14532d,#166534); }
     @media (max-width:800px) { .blind-grid{grid-template-columns:1fr}.blind-box{min-height:180px} }
@@ -224,6 +225,9 @@
       border: 2px solid transparent;
       transition: all 0.3s ease;
     }
+    .opt-item.answer-clickable { cursor:pointer; border-color:#38bdf8; }
+    .opt-item.answer-clickable:hover { transform:scale(1.02); background:#164e63; box-shadow:0 0 22px rgba(56,189,248,.25); }
+    .opt-item.disabled-answer { cursor:default; opacity:.7; }
     .opt-item.selected-answer { background:#78350f; border-color:#f59e0b; }
     .opt-item.reveal-correct {
       background: #15803d;
@@ -385,9 +389,9 @@
       <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
       <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
       <div class="blind-grid">
-        <div class="blind-box" id="blindBox0"><div class="icon">📦</div><div class="label">HỘP 1</div></div>
-        <div class="blind-box" id="blindBox1"><div class="icon">📦</div><div class="label">HỘP 2</div></div>
-        <div class="blind-box" id="blindBox2"><div class="icon">📦</div><div class="label">HỘP 3</div></div>
+        <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">📦</div><div class="label">HỘP 1</div></div>
+        <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">📦</div><div class="label">HỘP 2</div></div>
+        <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">📦</div><div class="label">HỘP 3</div></div>
       </div>
     </div>
 
@@ -563,13 +567,27 @@
       qs("screenQText").textContent = `Câu ${currentGameState.currentQuestion + 1}: ${q.q}`;
       const labels = ["A", "B", "C", "D"];
       const selected = currentGameState?.pendingAnswer?.index;
+      const canPick = !!currentGameState?.activeResponder && !currentGameState?.pendingAnswer && !currentGameState?.pendingBuff && !reveal;
       qs("screenOpts").innerHTML = q.options.map((opt, i) => {
         const isCorrect = reveal && i === q.answer;
         const isSelected = selected === i;
-        return `<div class="opt-item ${isCorrect ? 'reveal-correct' : ''} ${isSelected ? 'selected-answer' : ''}">
-          ${labels[i]}. ${opt} ${isCorrect ? '✓ (ĐÚNG)' : ''} ${isSelected ? '🔎 ĐÃ CHỌN' : ''}
+        const cls = `${isCorrect ? 'reveal-correct' : ''} ${isSelected ? 'selected-answer' : ''} ${canPick ? 'answer-clickable' : 'disabled-answer'}`;
+        return `<div class="opt-item ${cls}" ${canPick ? `onclick="selectScreenAnswer(${i})"` : ''}>
+          ${labels[i]}. ${opt} ${isCorrect ? '✓ (ĐÚNG)' : ''} ${isSelected ? '🔎 MC ĐÃ CHỌN' : ''}
         </div>`;
       }).join("");
+    }
+
+    // MC điều khiển trực tiếp trên màn hình chiếu. Người chơi chỉ trả lời bằng miệng.
+    function selectScreenAnswer(index) {
+      if (!currentGameState?.activeResponder || currentGameState?.pendingAnswer || currentGameState?.pendingBuff) return;
+      socket.emit("mcSelectAnswer", { index });
+    }
+
+    // Người chơi chỉ nói lựa chọn với MC; MC click hộp tương ứng trên màn hình chiếu.
+    function selectBuffBox(choice) {
+      if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.chosen) return;
+      socket.emit("chooseBuff", { choice });
     }
 
     function getDuckSVG(mainColor, wingColor) {
@@ -667,12 +685,14 @@
     socket.on("wrong", x => {
       playSound('wrong');
       qs("screenWinner").textContent = `❌ ${x.name} (NHÓM ${x.group}) TRẢ LỜI SAI!`;
-      qs("screenStatus").textContent = "MC quyết định: mở chuông cho các đội còn lại cướp hoặc sang câu mới.";
+      qs("screenStatus").textContent = "Sai rồi! Sau 3 giây, chuông sẽ nhường cho đội khác.";
+      if (currentGameState) { currentGameState.pendingAnswer = null; currentGameState.activeResponder = null; showQuestion(currentGameState.questions[currentGameState.currentQuestion], false); }
     });
 
     socket.on("stealOpened", () => {
-      qs("screenWinner").textContent = "🔔 CHUÔNG ĐÃ MỞ LẠI — CƯỚP QUYỀN!";
-      qs("screenStatus").textContent = "Các đội chưa bị khóa có thể bấm chuông cho cùng câu hỏi.";
+      qs("screenWinner").textContent = "🔔 CHUÔNG NHƯỜNG CHO BẠN KHÁC!";
+      qs("screenStatus").textContent = "Các nhóm còn lại có thể bấm chuông để giành quyền trả lời câu này.";
+      if (currentGameState) showQuestion(currentGameState.questions[currentGameState.currentQuestion], false);
     });
 
     socket.on("buffChoiceOpened", x => {
@@ -685,8 +705,8 @@
     socket.on("buffBoxChosen", x => {
       qs("blindBoxArea").style.display = "block";
       [0,1,2].forEach(i => qs("blindBox"+i).classList.toggle("chosen", i === Number(x.choice)));
-      qs("screenWinner").textContent = `🎁 ĐÃ CHỌN HỘP ${Number(x.choice)+1}`;
-      qs("screenStatus").textContent = "MC đang mở hộp...";
+      qs("screenWinner").textContent = `🎁 MC ĐÃ CHỌN HỘP ${Number(x.choice)+1}`;
+      qs("screenStatus").textContent = "Đang mở hộp bí ẩn...";
     });
 
     socket.on("buffRevealedMC", x => {

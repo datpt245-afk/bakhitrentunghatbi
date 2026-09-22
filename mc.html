@@ -37,30 +37,9 @@
           <div id="winner" class="winner">🔔 Đang chờ MC mở câu hỏi...</div>
           <div id="qbox" class="qbox">Chưa có câu hỏi nào được chọn</div>
           <div id="opts" class="options"></div>
-
-          <div id="judgePanel" class="card" style="display:none; margin-top:14px; background:#0f172a; border:1px solid #f59e0b;">
-            <div id="selectedAnswer" style="font-weight:900; color:#fbbf24; margin-bottom:10px;"></div>
-            <div class="row">
-              <button class="btn primary" onclick="checkSelectedAnswer()">🔍 KIỂM TRA ĐÁP ÁN ĐÃ CHỌN</button>
-            </div>
-            <div class="muted" style="margin-top:8px;">MC bấm kiểm tra sau khi người chơi đã chọn. Hệ thống sẽ tự xác định ĐÚNG/SAI.</div>
-          </div>
-
-          <div id="wrongPanel" class="card" style="display:none; margin-top:14px; background:#0f172a; border:1px solid #ef4444;">
-            <div style="font-weight:900; color:#fca5a5; margin-bottom:10px;">Người trả lời đã sai. MC chọn bước tiếp theo:</div>
-            <div class="row">
-              <button class="btn primary" onclick="allowSteal()">🔔 MỞ CHUÔNG CHO CƯỚP</button>
-              <button class="btn dark" onclick="skipQuestion()">▶️ SANG CÂU TIẾP THEO</button>
-            </div>
-          </div>
-
           <div id="buffPanel" class="card" style="display:none; margin-top:14px; background:#0f172a; border:1px solid #a855f7;">
             <div id="buffStatus" style="font-weight:900; color:#d8b4fe; margin-bottom:10px;"></div>
-            <div id="buffChoices" class="row" style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(0)">📦 HỘP 1</button>
-              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(1)">📦 HỘP 2</button>
-              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(2)">📦 HỘP 3</button>
-            </div>
+            <div class="muted">Đội trả lời nói chọn Hộp 1/2/3. MC click trực tiếp hộp tương ứng trên màn hình chiếu.</div>
           </div>
           
           <div class="row" style="margin-top: 16px;">
@@ -414,13 +393,11 @@
       qs("qbox").textContent = `Câu ${state.currentQuestion + 1}: ${q.q}`;
       const labels = ["A", "B", "C", "D"];
       const selected = state.pendingAnswer?.index;
-      const canSelect = !!state.activeResponder && !state.pendingAnswer && !reveal;
       qs("opts").innerHTML = q.options.map((o, i) => `
-        <div class="opt ${selected === i ? 'selected-answer' : ''} ${reveal && i === q.answer ? 'correct' : ''}" ${canSelect ? `onclick="selectAnswer(${i})" style="cursor:pointer"` : ''}>
+        <div class="opt ${selected === i ? 'selected-answer' : ''} ${reveal && i === q.answer ? 'correct' : ''}">
           ${labels[i]}. ${o} ${reveal && i === q.answer ? ' ✓' : ''}${selected === i ? ' 🔎' : ''}
         </div>
       `).join("");
-      renderJudgePanel();
     }
 
     function updateNextButton() {
@@ -445,28 +422,8 @@
       socket.emit("nextQuestion");
     }
 
-    function selectAnswer(index) { socket.emit("mcSelectAnswer", { index }); }
-    function checkSelectedAnswer() { socket.emit("judgeAnswer"); }
-    function allowSteal() { socket.emit("allowSteal"); }
-    function skipQuestion() { socket.emit("skipQuestion"); }
-    function chooseBuffFromMC(choice) {
-      socket.emit("chooseBuff", { choice });
-      document.querySelectorAll("#buffChoices .buff-choice").forEach(b=>b.disabled=true);
-    }
-
-    function renderJudgePanel() {
-      const jp = qs("judgePanel"), wp = qs("wrongPanel");
-      const p = state?.pendingAnswer;
-      if (p) {
-        const q = state.questions[state.currentQuestion];
-        const labels = ["A","B","C","D"];
-        qs("selectedAnswer").textContent = `🔎 ${p.name} (Nhóm ${p.group}) đã chọn ${labels[p.index]}: ${q?.options?.[p.index] || ""}`;
-        jp.style.display = "block";
-        wp.style.display = "none";
-      } else {
-        jp.style.display = "none";
-      }
-    }
+    function selectAnswer(index) { /* Đã chuyển sang màn hình chiếu. */ }
+    function renderJudgePanel() { /* Không còn bảng chọn đáp án trên trang MC. */ }
 
     function addQuestion() {
       const q = qs("newQ").value.trim();
@@ -545,49 +502,37 @@
     socket.on("questionOpened", x => {
       qs("winner").textContent = `❓ CÂU HỎI SỐ ${x.index + 1} ĐÃ MỞ!`;
       qs("status").textContent = "Chuông đã bật. MC đang chờ đội giành quyền trả lời.";
-      qs("wrongPanel").style.display = "none";
       qs("buffPanel").style.display = "none";
     });
 
     socket.on("buzzed", x => {
       qs("winner").textContent = `🚨 ${x.name.toUpperCase()} (NHÓM ${x.group}) GIÀNH QUYỀN!`;
-      qs("status").textContent = "MC gọi người vừa bấm chuông đứng dậy trả lời. Sau đó MC bấm vào A/B/C/D để ghi nhận câu trả lời.";
+      qs("status").textContent = "MC gọi người vừa bấm chuông đứng dậy trả lời. MC chọn đáp án bằng cách click trực tiếp A/B/C/D trên màn hình chiếu.";
     });
 
-    socket.on("answerSelected", x => {
-      qs("winner").textContent = `🔎 ${x.name} (NHÓM ${x.group}) ĐÃ CHỌN ĐÁP ÁN`;
-      qs("status").textContent = "MC hãy chọn A/B/C/D theo câu trả lời miệng của người chơi, rồi bấm KIỂM TRA.";
-      if (state) { state.pendingAnswer = x; render(state); }
-    });
 
     socket.on("result", x => {
       qs("winner").textContent = `✅ ${x.name} (NHÓM ${x.group}) TRẢ LỜI ĐÚNG!`;
       qs("status").textContent = `+${x.teamStep} điểm nhóm, +${x.personalPoint} điểm cá nhân. Đội trả lời đang chọn 1 trong 3 hộp bí ẩn.`;
-      qs("wrongPanel").style.display = "none";
     });
 
     socket.on("wrong", x => {
       qs("winner").textContent = x.timedOut ? `⏱️ ${x.name} (NHÓM ${x.group}) HẾT THỜI GIAN!` : `❌ ${x.name} (NHÓM ${x.group}) TRẢ LỜI SAI!`;
-      qs("status").textContent = "MC quyết định: mở chuông cho các đội còn lại cướp hoặc sang câu mới.";
-      qs("judgePanel").style.display = "none";
-      qs("wrongPanel").style.display = "block";
+      qs("status").textContent = "Sai. Sau 3 giây hệ thống tự động nhường chuông cho đội khác.";
     });
 
     socket.on("stealOpened", () => {
       qs("winner").textContent = "🔔 CHUÔNG ĐÃ MỞ LẠI — CƯỚP QUYỀN!";
       qs("status").textContent = "Các đội chưa bị khóa có thể bấm chuông cho cùng câu hỏi.";
-      qs("wrongPanel").style.display = "none";
     });
 
     socket.on("buffChoiceOpened", x => {
       qs("buffPanel").style.display = "block";
-      qs("buffStatus").textContent = `🎁 ${x.name} (Nhóm ${x.group}) đã trả lời đúng. Đội nói với MC chọn hộp nào.`;
-      document.querySelectorAll("#buffChoices .buff-choice").forEach(b=>b.disabled=false);
+      qs("buffStatus").textContent = `🎁 ${x.name} (Nhóm ${x.group}) đã trả lời đúng. Đội nói với MC chọn hộp nào, MC click hộp đó trên màn hình chiếu.`;
     });
 
     socket.on("buffBoxChosen", x => {
-      qs("buffStatus").textContent = `🎁 Đội ${x.group} chọn Hộp ${Number(x.choice)+1}. MC đã xác nhận lựa chọn.`;
-      document.querySelectorAll("#buffChoices .buff-choice").forEach((b,i)=>b.disabled=true);
+      qs("buffStatus").textContent = `🎁 MC đã chọn Hộp ${Number(x.choice)+1} trên màn hình chiếu.`;
     });
 
     socket.on("buffRevealedMC", x => {
@@ -607,7 +552,6 @@
     socket.on("questionSkipped", () => {
       qs("winner").textContent = "⏭️ CÂU HỎI ĐÃ ĐƯỢC BỎ QUA";
       qs("status").textContent = "Câu đã kết thúc. MC bấm 'SANG CÂU TIẾP THEO' khi sẵn sàng.";
-      qs("wrongPanel").style.display = "none";
     });
 
     socket.on("resetBuzz", () => {

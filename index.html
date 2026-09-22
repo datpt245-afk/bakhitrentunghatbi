@@ -38,7 +38,7 @@ function buzz(){
 s.on("buzzed",x=>{
   document.getElementById("buzz").disabled=true;
   if(x.group === group) {
-    status.textContent=`🚨 Bạn đã giành quyền! MC sẽ gọi bạn đứng dậy để trả lời.`;
+    status.textContent=`🚨 Bạn đã giành quyền! MC sẽ gọi bạn đứng dậy để trả lời trực tiếp.`;
   } else {
     status.textContent=`🔒 Nhóm ${x.group} đang trả lời...`;
   }

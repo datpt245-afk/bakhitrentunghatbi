@@ -126,7 +126,6 @@ function awardCorrect() {
     teamStep: base,
     personalPoint: Math.max(1, Number(game.scoring.personalPoint) || 1)
   });
-  io.to(game.activeResponder.socketId).emit("correctForResponder", { group: g, name: r.name, buffChoices: [1,2,3] });
   io.emit("buffChoiceOpened", { group: g, name: r.name });
   io.emit("state", snapshot());
 }
@@ -135,12 +134,23 @@ function awardWrong(timedOut = false) {
   const r = game.activeResponder;
   if (!r) return;
   const g = String(r.group);
-  game.lockedGroups.push(g);
+  if (!game.lockedGroups.includes(g)) game.lockedGroups.push(g);
   game.activeResponder = null;
   game.pendingAnswer = null;
   game.wrongPending = { name: r.name, group: g };
   io.emit("wrong", { name: r.name, group: g, timedOut, canSteal: true });
   io.emit("state", snapshot());
+
+  // Sau 3 giây, tự động nhường chuông cho các đội còn lại.
+  setTimeout(() => {
+    if (!game.wrongPending || String(game.wrongPending.group) !== g) return;
+    game.wrongPending = null;
+    game.questionOpen = true;
+    game.activeResponder = null;
+    game.pendingAnswer = null;
+    io.emit("stealOpened", { message: "🔔 CHUÔNG NHƯỜNG CHO BẠN KHÁC!" });
+    io.emit("state", snapshot());
+  }, 3000);
 }
 
 io.on("connection", socket => {
@@ -182,24 +192,20 @@ io.on("connection", socket => {
     io.emit("state", snapshot());
   });
 
-  // MC chọn đáp án mà người chơi vừa trả lời bằng miệng.
+  // MC bấm trực tiếp vào A/B/C/D trên màn hình chiếu theo câu trả lời miệng.
+  // Bấm một lần là hệ thống kiểm tra ngay, không có bước "kiểm tra" riêng.
   socket.on("mcSelectAnswer", ({ index }) => {
-    if (!game.activeResponder || game.pendingAnswer) return;
+    if (!game.activeResponder || game.pendingAnswer || game.pendingBuff) return;
     const currentQ = game.questions[game.currentQuestion];
     if (!currentQ || !Number.isInteger(index) || index < 0 || index > 3) return;
     game.pendingAnswer = { index, name: game.activeResponder.name, group: String(game.activeResponder.group) };
     io.emit("answerSelected", game.pendingAnswer);
-    io.emit("state", snapshot());
-  });
-
-  // MC manually judges the selected answer.
-  socket.on("judgeAnswer", () => {
-    if (!game.activeResponder || !game.pendingAnswer) return;
-    const currentQ = game.questions[game.currentQuestion];
-    if (!currentQ) return;
-    const isCorrect = game.pendingAnswer.index === currentQ.answer;
-    if (isCorrect) awardCorrect();
-    else awardWrong(false);
+    const isCorrect = index === currentQ.answer;
+    if (isCorrect) {
+      awardCorrect();
+    } else {
+      awardWrong(false);
+    }
   });
 
   // MC chooses whether to let remaining teams steal or skip to the next question.
