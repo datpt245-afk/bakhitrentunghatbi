@@ -1,0 +1,12 @@
+
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#07152f,#123c62 55%,#087f8c);color:#fff;min-height:100vh}
+.wrap{max-width:1450px;margin:auto;padding:20px}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:34px}.sub{opacity:.78;margin-top:5px}.card{background:#ffffff12;border:1px solid #ffffff1c;border-radius:20px;padding:18px;box-shadow:0 12px 35px #0003;backdrop-filter:blur(10px)}
+.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:800;cursor:pointer}.btn:hover{transform:translateY(-1px)}
+.primary{background:#ffd84d;color:#162238}.ok{background:#55df9b}.bad{background:#ff6b6b;color:#fff}.dark{background:#dce7ef;color:#10233c}.purple{background:#b991ff;color:#fff}
+.grid{display:grid;grid-template-columns:1.35fr .65fr;gap:15px;margin-top:15px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+input,textarea,select{width:100%;border:1px solid #ffffff22;background:#081a31;color:#fff;border-radius:10px;padding:11px;font-size:15px}textarea{min-height:90px}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.muted{opacity:.72;font-size:13px}.status{padding:13px;border-radius:12px;background:#061326aa;font-weight:800;text-align:center;margin-top:12px}
+table{width:100%;border-collapse:collapse}th,td{padding:9px;border-bottom:1px solid #ffffff18;text-align:left}.winner{font-size:28px;font-weight:900;text-align:center;padding:18px;border-radius:15px;background:#0003}
+.qbox{font-size:25px;font-weight:850;line-height:1.3;margin:10px 0}.options{display:grid;grid-template-columns:1fr 1fr;gap:9px}.opt{padding:12px;border-radius:11px;background:#ffffff10;border:1px solid #ffffff18}.opt.correct{background:#35c989}.lane{position:relative;height:70px;background:#ffffff0c;border-radius:14px;margin:8px 0;overflow:hidden;border:1px solid #ffffff12}.lane .n{position:absolute;left:10px;top:8px;font-weight:900;z-index:2}.line{position:absolute;left:130px;right:50px;top:38px;border-top:4px dashed #ffffff55}.duck{position:absolute;left:130px;top:17px;font-size:36px;transition:left .7s cubic-bezier(.2,.8,.2,1)}.finish{position:absolute;right:10px;top:13px;font-size:38px}
+@media(max-width:950px){.grid,.grid2{grid-template-columns:1fr}.options{grid-template-columns:1fr}}

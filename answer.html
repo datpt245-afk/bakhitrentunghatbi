@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Trả Lời Câu Hỏi</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body{display:grid;place-items:center;min-height:100vh;margin:0;background:#0d1117}
+    .box{width:min(94vw,620px);text-align:center}
+    .waiting{padding:14px;border-radius:12px;background:#172033;color:#fbbf24;font-weight:800;margin:12px 0}
+    .opt-btn{width:100%;padding:15px;margin-bottom:12px;font-size:18px;font-weight:bold;background:rgba(255,255,255,.05);border:2px solid #38bdf8;color:#fff;border-radius:12px;cursor:pointer;text-align:left}
+    .opt-btn:disabled{opacity:.45;cursor:not-allowed}
+    .boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:15px}
+    .box-btn{padding:24px 10px;border:2px solid #a855f7;border-radius:16px;background:#2e1065;color:#fff;font-size:24px;font-weight:900;cursor:pointer}
+    .box-btn:hover{transform:translateY(-2px)}
+    .buff-result{padding:18px;border-radius:14px;background:#172033;border:1px solid #a855f7;margin-top:15px}
+    .targets{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+    .target-btn{padding:13px;border:1px solid #38bdf8;background:#082f49;color:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="card box">
+    <h2 style="color:#f59e0b;margin-top:0">🎤 QUYỀN TRẢ LỜI</h2>
+    <div id="questionText" class="qbox" style="font-size:20px;margin-bottom:20px"></div>
+    <div id="optionsContainer"></div>
+    <div id="waiting" class="waiting">🔎 Hãy chọn đáp án. Sau đó MC sẽ là người xác nhận ĐÚNG/SAI.</div>
+    <div id="buffArea" style="display:none"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const s=io();
+    const data=JSON.parse(sessionStorage.getItem("answerData")||"null");
+    let submitted=false;
+    let currentState=null;
+
+    if(!data){
+      const savedGroup=sessionStorage.getItem("userGroup")||"1";
+      location.href=`/?group=${savedGroup}`;
+    }else{
+      sessionStorage.setItem("userName",data.name);
+      sessionStorage.setItem("userGroup",data.group);
+      document.getElementById("questionText").textContent=data.question.q;
+      const container=document.getElementById("optionsContainer");
+      const labels=["A","B","C","D"];
+      data.question.options.forEach((opt,idx)=>{
+        const btn=document.createElement("button");
+        btn.className="opt-btn";
+        btn.textContent=`${labels[idx]}. ${opt}`;
+        btn.onclick=()=>submit(idx);
+        container.appendChild(btn);
+      });
+    }
+
+    function submit(index){
+      if(submitted)return;
+      submitted=true;
+      document.querySelectorAll(".opt-btn").forEach(b=>b.disabled=true);
+      document.getElementById("waiting").textContent="⏳ Đã gửi đáp án. Đang chờ MC kiểm tra...";
+      s.emit("submitAnswer",{index,name:data.name,group:data.group});
+    }
+
+    function showBuffChoices(){
+      const area=document.getElementById("buffArea");
+      area.style.display="block";
+      area.innerHTML=`<div class="buff-result"><h3 style="margin:0;color:#d8b4fe">🎁 CHỌN 1 HỘP BÍ ẨN</h3><p>Không biết trước buff bên trong. Chọn một hộp:</p><div class="boxes"><button class="box-btn" onclick="chooseBuff(0)">📦<br>1</button><button class="box-btn" onclick="chooseBuff(1)">📦<br>2</button><button class="box-btn" onclick="chooseBuff(2)">📦<br>3</button></div></div>`;
+      document.getElementById("waiting").textContent="🎁 Bạn đã trả lời đúng. Hãy chọn 1 trong 3 hộp.";
+    }
+
+    function chooseBuff(choice){
+      document.querySelectorAll(".box-btn").forEach(b=>b.disabled=true);
+      document.getElementById("waiting").textContent="🔓 Đang mở hộp...";
+      s.emit("chooseBuff",{choice});
+    }
+
+    function showBuff(buff){
+      const area=document.getElementById("buffArea");
+      area.style.display="block";
+      area.innerHTML=`<div class="buff-result"><h3 style="color:#4ade80;margin:0">🎉 BẠN NHẬN ĐƯỢC: ${buff.name}</h3><p>${buff.desc}</p><div id="targetArea"></div></div>`;
+    }
+
+    function showSwapTargets(){
+      const area=document.getElementById("targetArea");
+      area.innerHTML=`<b>Chọn đội để hoán đổi điểm:</b><div class="targets">${[1,2,3,4,5].filter(g=>String(g)!==String(data.group)).map(g=>`<button class="target-btn" onclick="chooseTarget(${g})">🔄 Nhóm ${g}</button>`).join("")}</div>`;
+    }
+
+    function chooseTarget(targetGroup){
+      document.querySelectorAll(".target-btn").forEach(b=>b.disabled=true);
+      document.getElementById("waiting").textContent="🔄 Đang hoán đổi điểm...";
+      s.emit("chooseSwapTarget",{targetGroup:String(targetGroup)});
+    }
+
+    function backToBuzz(){
+      sessionStorage.removeItem("answerData");
+      setTimeout(()=>location.href=`/?group=${data.group}`,500);
+    }
+
+    s.on("correctForResponder",showBuffChoices);
+    s.on("buffRevealed",x=>{
+      showBuff(x.buff);
+      document.getElementById("waiting").textContent="✨ Buff đã được mở!";
+      if(x.buffId===4) showSwapTargets();
+    });
+    s.on("buffFinished",()=>{
+      document.getElementById("waiting").textContent="✅ Buff đã áp dụng. Quay lại chuông...";
+      backToBuzz();
+    });
+    s.on("wrong",x=>{
+      if(String(x.group)===String(data.group)){
+        document.getElementById("waiting").textContent="❌ MC đã xác nhận SAI. Chờ MC quyết định cướp hoặc sang câu mới.";
+      }
+    });
+    s.on("stealOpened",()=>backToBuzz());
+    s.on("questionSkipped",()=>backToBuzz());
+    s.on("fullReset",()=>{sessionStorage.clear();location.href=`/?group=${data.group}`});
+  </script>
+</body>
+</html>

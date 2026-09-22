@@ -1,0 +1,108 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Duck Race - Chuông</title><link rel="stylesheet" href="/style.css">
+<style>body{display:grid;place-items:center;user-select:none;-webkit-user-select:none;touch-action:manipulation}.box{width:min(94vw,520px);text-align:center}.team{font-size:24px;font-weight:900}.name{margin:18px 0}.buzz{display:block;margin:20px auto;width:230px;height:230px;border:0;border-radius:50%;background:#ed4d62;color:#fff;font-size:31px;font-weight:900;box-shadow:0 15px #a52d3d;cursor:pointer;transition:transform 0.05s, background 0.2s}.buzz:active{transform:translateY(10px);box-shadow:0 5px #a52d3d}.buzz:disabled{opacity:.35;cursor:not-allowed;background:#747d8c;box-shadow:none}.status{min-height:30px;font-weight:bold;margin-top:10px}</style></head>
+<body><div class="card box"><h1>🔔 DUCK RACE</h1><div class="team" id="team"></div><div id="join">
+<input id="name" class="name" placeholder="Nhập tên thành viên"><button class="btn primary" onclick="join()">Vào chuông</button>
+</div><div id="play" style="display:none"><div class="muted" id="me"></div><button id="buzz" class="buzz" onclick="buzz()">🔔<br>BẤM CHUÔNG</button><div id="status" class="status">Đang chờ MC mở câu hỏi...</div></div></div>
+<script src="/socket.io/socket.io.js"></script><script>
+const p=new URLSearchParams(location.search),group=p.get("group")||"1",s=io();let name="";
+team.textContent="NHÓM "+group;
+
+// Tự động khôi phục tên nếu đã từng nhập
+window.addEventListener("DOMContentLoaded", () => {
+  const savedName = sessionStorage.getItem("userName");
+  if (savedName) {
+    document.getElementById("name").value = savedName;
+    join();
+  }
+});
+
+function join(){
+  name=document.getElementById("name").value.trim();
+  if(!name)return alert("Nhập tên trước nhé!");
+  sessionStorage.setItem("userName", name);
+  sessionStorage.setItem("userGroup", group);
+  s.emit("joinMember",{group,name});
+}
+
+s.on("joined",x=>{
+  document.getElementById("join").style.display="none";
+  document.getElementById("play").style.display="block";
+  document.getElementById("me").textContent="👤 "+x.name+" • Nhóm "+group;
+});
+
+function buzz(){
+  document.getElementById("buzz").disabled=true;
+  s.emit("buzz",{group,name});
+}
+
+s.on("answerAccess", data => {
+  sessionStorage.setItem("answerData", JSON.stringify(data));
+  location.href = "/answer.html";
+});
+
+s.on("buzzed",x=>{
+  document.getElementById("buzz").disabled=true;
+  if(x.group === group) {
+    status.textContent=`🚨 ${x.name} (Nhóm bạn) đã giành quyền trả lời!`;
+  } else {
+    status.textContent=`🔒 Nhóm ${x.group} (${x.name}) đang trả lời...`;
+  }
+});
+
+s.on("questionOpened",()=>{
+  document.getElementById("buzz").disabled=false;
+  status.textContent="🔔 Câu hỏi đã mở — bấm thật nhanh!";
+});
+
+s.on("resetBuzz",()=>{
+  const btn = document.getElementById("buzz");
+  if(!btn.disabled) {
+    status.textContent="🔔 Chuông đã mở lại — bấm cướp quyền!";
+  }
+});
+
+s.on("wrong",x=>{
+  if(x.group === group) {
+    document.getElementById("buzz").disabled=true;
+    status.textContent="❌ MC đã xác nhận sai. Nhóm bạn bị khóa lượt câu này.";
+  } else {
+    status.textContent=`🔔 Nhóm ${x.group} trả lời sai. Chờ MC quyết định mở cướp quyền.`;
+  }
+});
+
+s.on("state", st => {
+  currentState=st;
+  const btn = document.getElementById("buzz");
+  if (!st.questionOpen) {
+    btn.disabled = true;
+    status.textContent = "⏳ Đang chờ MC mở câu hỏi...";
+    return;
+  }
+  const isLocked = st.lockedGroups && st.lockedGroups.includes(String(group));
+  if (st.activeResponder) {
+    btn.disabled = true;
+  } else if (isLocked) {
+    btn.disabled = true;
+    status.textContent = "❌ Nhóm bạn đã bị khóa ở câu hỏi này.";
+  } else {
+    btn.disabled = false;
+  }
+});
+
+s.on("stealOpened", () => {
+  const btn=document.getElementById("buzz");
+  const st=currentState;
+  btn.disabled=false;
+  status.textContent="🔔 MC đã mở cướp quyền — bấm chuông cho cùng câu hỏi!";
+});
+
+s.on("questionSkipped", () => {
+  document.getElementById("buzz").disabled=true;
+  status.textContent = "⏭️ Câu hỏi đã kết thúc. Chờ MC mở câu tiếp theo.";
+});
+
+s.on("fullReset", () => {
+  sessionStorage.clear();
+  location.reload();
+});
+</script></body></html>
