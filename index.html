@@ -8,7 +8,7 @@
 <button class="btn primary" style="width:100%;font-size:20px;padding:15px" onclick="join()">VÀO CHUÔNG</button>
 </div><div id="play" style="display:none"><div class="muted" id="me"></div><button id="buzz" class="buzz" onclick="buzz()">🔔<br>BẤM CHUÔNG</button><div id="status" class="status">Đang chờ MC mở câu hỏi...</div></div></div>
 <script src="/socket.io/socket.io.js"></script><script>
-const p=new URLSearchParams(location.search);let group=p.get("group")||sessionStorage.getItem("userGroup")||"1";const s=io();let name="";let currentState=null;
+let group=sessionStorage.getItem("userGroup")||"1";const s=io();let name="";let currentState=null;
 const groupSelect=document.getElementById("groupSelect");groupSelect.value=group;
 team.textContent="NHÓM "+group;
 

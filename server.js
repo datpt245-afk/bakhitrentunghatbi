@@ -237,7 +237,7 @@ io.on("connection", socket => {
     io.emit("buffBoxChosen", { group: p.group, name: p.name, choice: Number(choice) });
     const buffId = p.buffId;
     io.emit("buffRevealed", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId] });
-    io.emit("buffRevealedMC", { group: p.group, name: p.name, buffId, buff: BUFFS[buffId] });
+    io.emit("buffRevealedMC", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId] });
     if (buffId === 1) applyBuff1(p);
     else if (buffId === 2) applyBuff2(p);
     else if (buffId === 3) applyBuff3(p);

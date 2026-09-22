@@ -347,7 +347,7 @@
     <div class="rules-card">
       <h1 class="rules-title">📜 LUẬT CHƠI DUCK RACE</h1>
       <ol class="rules-list">
-        <li><strong>Tham gia:</strong> Tất cả các thành viên truy cập vào liên kết theo đúng tên nhóm của bản thân (Dành cho Nhóm 1, 3, 4, 5).</li>
+        <li><strong>Tham gia:</strong> Tất cả thành viên dùng cùng một liên kết, sau đó nhập tên và chọn nhóm của mình.</li>
         <li><strong>Giành quyền trả lời:</strong> Khi trò chơi bắt đầu, người chơi đọc câu hỏi và nhanh tay <strong>ấn chuông</strong>. Người bấm nhanh nhất sẽ giành quyền trả lời để mang về điểm <strong>CÁ NHÂN + NHÓM</strong>.</li>
         <li><strong>Chuyển quyền:</strong> Nếu người đầu tiên trả lời sai, quyền trả lời sẽ được chuyển tiếp sang người tiếp theo bấm chuông.</li>
         <li><strong>Kết thúc & Bảng điểm:</strong> Khi trò chơi kết thúc, hệ thống sẽ tính điểm CÁ NHÂN (dựa trên chú vịt chạy xa nhất) và tổng điểm các thành viên để tính điểm NHÓM:</li>
@@ -709,12 +709,29 @@
       qs("screenStatus").textContent = "Đang mở hộp bí ẩn...";
     });
 
-    socket.on("buffRevealedMC", x => {
+    socket.on("buffRevealed", x => {
       qs("blindBoxArea").style.display = "block";
-      qs("blindBox"+Number(x.choice)).classList.add("revealed");
-      qs("blindBox"+Number(x.choice)).innerHTML = `<div class="icon">✨</div><div class="label">${x.buff.name}</div>`;
-      qs("screenWinner").textContent = `🎁 HỘP ${Number(x.choice)+1}: ${x.buff.name}`;
+      const choice = Number(x.choice);
+      [0,1,2].forEach(i => qs("blindBox"+i).classList.toggle("revealed", i === choice));
+      if (choice >= 0 && choice <= 2) {
+        qs("blindBox"+choice).innerHTML = `<div class="icon">✨</div><div class="label">${x.buff.name}</div>`;
+      }
+      qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
       qs("screenStatus").textContent = x.buff.desc;
+    });
+
+    socket.on("buffRevealedMC", x => {
+      // Compatibility with older server payloads that may omit the box index.
+      if (x && x.choice !== undefined) {
+        const choice = Number(x.choice);
+        qs("blindBoxArea").style.display = "block";
+        if (choice >= 0 && choice <= 2) {
+          qs("blindBox"+choice).classList.add("revealed");
+          qs("blindBox"+choice).innerHTML = `<div class="icon">✨</div><div class="label">${x.buff.name}</div>`;
+        }
+        qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
+        qs("screenStatus").textContent = x.buff.desc;
+      }
     });
 
     socket.on("buffApplied", x => {
