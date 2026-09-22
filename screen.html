@@ -173,6 +173,16 @@
     .blind-box:hover { transform:translateY(-7px) scale(1.035); box-shadow:0 25px 50px rgba(0,0,0,.55),0 0 35px rgba(255,255,255,.2); }
     .blind-box.chosen { border-color:#fff; background:linear-gradient(145deg,#facc15,#f97316,#ef4444); transform:scale(1.06); box-shadow:0 0 55px rgba(250,204,21,.75); }
     .blind-box.revealed { border-color:#fff; background:linear-gradient(145deg,#a855f7,#ec4899,#f43f5e); box-shadow:0 0 50px rgba(236,72,153,.6); }
+
+    .question-buff-badge { display:none; margin:8px auto 0; width:max-content; padding:7px 14px; border-radius:999px; background:#7c3aed; color:#fff; font-weight:1000; font-size:15px; box-shadow:0 0 18px rgba(124,58,237,.45); }
+    .question-buff-badge.active { display:block; }
+    .q-card { margin-bottom:14px; }
+    .race-track { margin-top:0; }
+    #blindBoxArea { max-width:1100px; margin:10px auto 14px; }
+    .blind-grid { gap:12px; }
+    .blind-box { min-height:130px; }
+    .blind-box .icon { font-size:55px; }
+    .blind-box .label { font-size:22px; margin-top:8px; }
     @media (max-width:800px) { .blind-grid{grid-template-columns:1fr}.blind-box{min-height:180px} }
 
     /* ĐỒNG HỒ ĐẾM NGƯỢC 5 GIÂY */
@@ -355,6 +365,23 @@
       35% { transform: translateX(-50%) scale(1.2); opacity: 1; }
       100% { transform: translateX(-50%) scale(0.8) translateY(-12px); opacity: 0; }
     }
+    .duck-score-badge {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: rgba(15,23,42,.92);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 3px 10px rgba(0,0,0,.28);
+      z-index: 4;
+    }
+
     .duck-hit { animation: duckHit 0.65s ease-in-out !important; }
     @keyframes duckHit {
       0%, 100% { transform: translateX(0) rotate(0deg); }
@@ -363,21 +390,6 @@
       75% { transform: translateX(4px) rotate(8deg); }
     }
 
-    .scoreboard {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-top: 20px;
-    }
-    .score-card {
-      background: #1e293b;
-      padding: 12px;
-      border-radius: 12px;
-      text-align: center;
-      border: 1px solid #334155;
-    }
-    .score-card h4 { margin: 0; font-size: 15px; color: #94a3b8; }
-    .score-card .pts { font-size: 26px; font-weight: 900; color: #38bdf8; margin-top: 4px; }
     .q-card.temporarily-hidden { display:none; }
     .race-track.buff-focus { margin-top: 0; border-color: #f59e0b; box-shadow: 0 0 28px rgba(245,158,11,.22); }
     .race-track.buff-focus > h2 { color:#fbbf24 !important; }
@@ -392,22 +404,25 @@
     <div class="rules-card">
       <h1 class="rules-title">📜 LUẬT CHƠI DUCK RACE</h1>
       <ol class="rules-list">
-        <li><strong>Tham gia:</strong> Tất cả thành viên dùng cùng một liên kết, sau đó nhập tên và chọn nhóm của mình.</li>
-        <li><strong>Giành quyền trả lời:</strong> Khi trò chơi bắt đầu, người chơi đọc câu hỏi và nhanh tay <strong>ấn chuông</strong>. Người bấm nhanh nhất sẽ giành quyền trả lời để mang về điểm <strong>CÁ NHÂN + NHÓM</strong>.</li>
-        <li><strong>Chuyển quyền:</strong> Nếu người đầu tiên trả lời sai, quyền trả lời sẽ được chuyển tiếp sang người tiếp theo bấm chuông.</li>
-        <li><strong>Kết thúc & Bảng điểm:</strong> Khi trò chơi kết thúc, hệ thống sẽ tính điểm CÁ NHÂN (dựa trên chú vịt chạy xa nhất) và tổng điểm các thành viên để tính điểm NHÓM:</li>
+        <li><strong>Tham gia:</strong> Tất cả người chơi dùng <strong>một link chuông chung</strong>, nhập tên và chọn Nhóm 1–5.</li>
+        <li><strong>Giành quyền:</strong> Khi câu hỏi mở, ai bấm chuông trước sẽ giành quyền. Các chuông khác khóa lại.</li>
+        <li><strong>Trả lời:</strong> Người giành quyền trả lời <strong>bằng miệng</strong>. MC chọn trực tiếp A/B/C/D trên màn chiếu để chấm.</li>
+        <li><strong>Trả lời sai:</strong> Thành viên đó sai thì <strong>cả nhóm mất quyền trả lời câu đó</strong>. Sau đúng 3 giây, chuông tự mở cho các nhóm còn lại.</li>
+        <li><strong>Trả lời đúng:</strong> Nhóm được <strong>+2 điểm và vịt tiến 2 ô</strong>. Người trả lời được +1 điểm cá nhân.</li>
+        <li><strong>Câu có buff:</strong> Sau khi đúng, 3 hộp bí ẩn xuất hiện. Người chơi nói Hộp 1/2/3, MC bấm hộp tương ứng trên màn chiếu.</li>
+        <li><strong>Câu không có buff:</strong> Chỉ cộng điểm và tiến vịt, sau đó MC chủ động mở câu tiếp theo.</li>
+        <li><strong>Buff 1 – Cướp 2 điểm:</strong> Cướp tối đa 2 điểm từ một nhóm khác ngẫu nhiên; vịt nhóm bị cướp <strong>không lùi</strong>.</li>
+        <li><strong>Buff 2 – Nhân đôi điểm:</strong> Nhận thêm đúng số điểm nhóm vừa nhận từ câu hỏi đó; vịt tiến tương ứng.</li>
+        <li><strong>Buff 3 – Vấp đá:</strong> Mất 1 điểm nhưng <strong>vịt không lùi vị trí</strong>.</li>
+        <li><strong>Buff 4 – Hoán đổi điểm:</strong> Đổi toàn bộ điểm với một nhóm khác; <strong>không đổi vị trí vịt</strong>.</li>
+        <li><strong>Buff 5 – Tăng tốc:</strong> Vịt tiến 3 ô và nhóm nhận thêm 3 điểm.</li>
+        <li><strong>Buff 6 – Cân bằng điểm:</strong> Điểm nhóm nhận buff được đưa về bằng nhóm đang có điểm thấp nhất; <strong>không lùi vịt</strong>.</li>
+        <li><strong>Kết thúc:</strong> Có 31 câu. <strong>Không có vạch đích.</strong> Hết câu 31, nhóm có vịt đi xa nhất là nhóm thắng. Nếu bằng vị trí, xét điểm cao hơn.</li>
+        <li><strong>Nhịp chơi:</strong> MC tự quyết định khi nào mở câu tiếp theo; không tự động chuyển câu sau khi hiệu ứng/buff kết thúc.</li>
       </ol>
-
-      <div class="point-box">
-        🎯 <strong>QUY ĐỊNH CỘNG ĐIỂM THƯỞNG:</strong><br>
-        • Cá nhân cao nhất: <span>+2 điểm</span><br>
-        • Nhóm TOP 1: <span>+3 điểm</span> | Nhóm TOP 2: <span>+2 điểm</span> | Nhóm TOP 3: <span>+1 điểm</span>
-      </div>
-
+      <div class="point-box">🎁 <strong>12/31 câu</strong> được hệ thống chọn ngẫu nhiên để có buff mỗi ván.</div>
       <div class="lobby-status">⏳ ĐANG CHỜ MC BẤM BẮT ĐẦU TRÒ CHƠI...</div>
-      <div>
-        <button class="activate-sound-btn" onclick="startGameMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button>
-      </div>
+      <div><button class="activate-sound-btn" onclick="startGameMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button></div>
     </div>
   </div>
 
@@ -425,6 +440,7 @@
 
     <div class="q-card">
       <div id="screenQText" class="q-text">Chưa mở câu hỏi nào</div>
+      <div id="questionBuffBadge" class="question-buff-badge"></div>
       <div id="screenOpts" class="options-grid"></div>
     </div>
 
@@ -447,15 +463,19 @@
     </div>
 
     <div id="screenRace"></div>
-      <div id="screenScores" class="scoreboard"></div>
     </div>
   </div>
+
+
+    /* Màn chiếu chỉ hiển thị điểm ngay trên từng chú vịt; không dùng bảng/thanh điểm riêng. */
+    .scoreboard, .score-board, .score-panel, .score-bar, .team-score-bar, #scoreboard, #scoreBoard { display:none !important; }
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const qs = id => document.getElementById(id);
     let currentGameState = null;
+    let currentQuestionHasBuff = false;
 
     let soundEnabled = true;
 
@@ -556,20 +576,25 @@
     function playGameMusicStep() {
       if (!soundEnabled || !audioCtx) return;
       const now = audioCtx.currentTime;
+      // 150 BPM / 16 bước: nhịp dồn như một cuộc đua arcade.
       const step = gameMusicStep % 16;
-      const bass = [110,110,147,110,123,123,165,123,98,98,131,98,110,110,147,165][step];
-      const lead = [440,523,659,523,494,587,740,587,392,494,587,494,440,523,659,784][step];
+      const bass = [110,110,110,147,123,123,123,165,98,98,98,131,110,110,147,165][step];
+      const lead = [440,523,659,784,659,784,988,1175,392,494,587,784,440,659,784,1047][step];
 
-      // Bass + lead tạo cảm giác chạy đua, nhanh và vui hơn.
-      tone(bass, now, 0.20, 'sawtooth', 0.055, bass * 0.96);
-      tone(lead, now, 0.12, 'square', 0.035);
+      // Bass ngắn + lead sáng để tạo cảm giác đang chạy.
+      tone(bass, now, 0.14, 'sawtooth', 0.075, bass * 0.82);
+      tone(lead, now, 0.10, 'square', 0.040);
 
-      // Kick ở các nhịp chính, snare ở nhịp phụ.
+      // Kick 4/4 + snare/hi-hat ở nhịp phụ.
       if (step % 4 === 0) {
-        tone(75, now, 0.10, 'sine', 0.12, 42);
-      } else if (step % 4 === 2) {
-        noiseBurst(now, 0.07, 0.045);
+        tone(70, now, 0.11, 'sine', 0.18, 38);
+        noiseBurst(now + 0.01, 0.035, 0.025);
+      } else if (step % 2 === 0) {
+        noiseBurst(now, 0.055, 0.055);
       }
+
+      // "Engine rev" ở cuối mỗi ô nhịp.
+      if (step === 15) tone(220, now, 0.18, 'sawtooth', 0.055, 520);
       gameMusicStep++;
     }
 
@@ -579,7 +604,7 @@
       gameMusicRunning = true;
       gameMusicStep = 0;
       playGameMusicStep();
-      gameMusicTimer = setInterval(playGameMusicStep, 250);
+      gameMusicTimer = setInterval(playGameMusicStep, 100);
       qs("audioToggleBtn").textContent = "🎵 Nhạc Game: ĐANG PHÁT";
     }
 
@@ -637,7 +662,6 @@
     socket.on("state", state => {
       currentGameState = state;
       renderRace(state);
-      renderScores(state);
 
       if (state.started || state.currentQuestion >= 0) {
         qs("rulesOverlay").classList.add("hidden");
@@ -660,15 +684,19 @@
     });
 
     function setQuestionVisible(visible) {
+      // Màn chiếu luôn giữ câu hỏi + A/B/C/D + đường đua cùng lúc.
       const card = document.querySelector('.q-card');
       const race = document.querySelector('.race-track');
-      if (card) card.classList.toggle('temporarily-hidden', !visible);
-      if (race) race.classList.toggle('buff-focus', !visible);
+      if (card) card.classList.remove('temporarily-hidden');
+      if (race) race.classList.remove('buff-focus');
     }
 
     function showQuestion(q, reveal = false) {
       setQuestionVisible(true);
       qs("screenQText").textContent = `Câu ${currentGameState.currentQuestion + 1}: ${q.q}`;
+      const hasBuff = currentQuestionHasBuff;
+      qs("questionBuffBadge").textContent = hasBuff ? "🎁 CÂU NÀY CÓ BUFF" : "";
+      qs("questionBuffBadge").classList.toggle("active", hasBuff);
       const labels = ["A", "B", "C", "D"];
       const selected = currentGameState?.pendingAnswer?.index;
       const canPick = !!currentGameState?.activeResponder && !currentGameState?.pendingAnswer && !currentGameState?.pendingBuff && !reveal;
@@ -757,9 +785,10 @@
 
         return `
           <div class="lane-container" id="lane-${gId}">
-            <div class="lane-info">${t.name || ('Nhóm ' + gId)} — ${score} điểm</div>
+            <div class="lane-info">${t.name || ('Nhóm ' + gId)}</div>
             
             <div class="duck-wrapper" style="left: ${pct}%;">
+              <div class="duck-score-badge">${score} điểm</div>
               <div class="water-ripple"></div>
               ${getDuckSVG(c.body, c.wing)}
             </div>
@@ -791,23 +820,8 @@
       setTimeout(() => impact.remove(), 900);
     }
 
-    function renderScores(x) {
-      if (!x || !x.teams) return;
-      let rawTeams = Array.isArray(x.teams) ? x.teams : Object.entries(x.teams).map(([k, v]) => ({ key: k, ...v }));
-      const activeTeams = rawTeams;
-
-      qs("screenScores").innerHTML = activeTeams.map(t => {
-        const gId = getGroupId(t);
-        return `
-          <div class="score-card">
-            <h4>${t.name || ('Nhóm ' + gId)}</h4>
-            <div class="pts">${t.score || 0} đ</div>
-          </div>
-        `;
-      }).join("");
-    }
-
     socket.on("questionOpened", x => {
+      currentQuestionHasBuff = !!x.hasBuff;
       setQuestionVisible(true);
       qs("blindBoxArea").classList.remove("buff-active");
       qs("blindBoxArea").style.display = "none";
@@ -860,7 +874,7 @@
 
     socket.on("buffChoiceOpened", x => {
       playSound("box");
-      setQuestionVisible(false);
+      setQuestionVisible(true);
       qs("blindBoxArea").classList.add("buff-active");
       qs("blindBoxArea").style.display = "block";
       qs("swapTargetPanel").style.display = "none";
@@ -872,7 +886,7 @@
     });
 
     socket.on("buffBoxChosen", x => {
-      setQuestionVisible(false);
+      setQuestionVisible(true);
       qs("blindBoxArea").classList.add("buff-active");
       qs("blindBoxArea").style.display = "block";
       [0,1,2].forEach(i => qs("blindBox"+i).classList.toggle("chosen", i === Number(x.choice)));
@@ -882,7 +896,7 @@
 
     socket.on("buffRevealed", x => {
       playSound("buff" + Number(x.buffId));
-      setQuestionVisible(false);
+      setQuestionVisible(true);
       qs("blindBoxArea").classList.add("buff-active");
       qs("blindBoxArea").style.display = "block";
       const choice = Number(x.choice);
@@ -918,7 +932,7 @@
       } else if (Number(x.buffId) === 3) {
         showStoneHit(x);
         qs("screenWinner").textContent = `🪨 NHÓM ${x.group} VẤP ĐÁ!`;
-        qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm và lùi 1 ô!";
+        qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm!";
       } else if (Number(x.buffId) === 4) {
         qs("swapTargetPanel").style.display = "none";
         qs("screenWinner").textContent = `🔄 NHÓM ${x.group} ↔ NHÓM ${x.targetGroup}`;

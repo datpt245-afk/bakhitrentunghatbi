@@ -16,7 +16,7 @@ app.use(express.static(__dirname));
 const BUFFS = {
   1: { name: "Cướp 2 điểm", desc: "Trừ 2 điểm từ một đội khác được chọn ngẫu nhiên.", rare: false },
   2: { name: "Nhân đôi điểm", desc: "Nhân đôi số điểm vừa nhận từ câu hỏi này.", rare: false },
-  3: { name: "Vấp đá", desc: "Vịt đâm vào hòn đá, mất 1 điểm và lùi 1 ô.", rare: false },
+  3: { name: "Vấp đá", desc: "Vịt đâm vào hòn đá, mất 1 điểm nhưng không lùi vị trí.", rare: false },
   4: { name: "Hoán đổi điểm", desc: "Đổi toàn bộ điểm với một đội khác.", rare: false },
   5: { name: "Tăng tốc", desc: "Vịt của đội tiến 3 ô và nhận thêm 3 điểm.", rare: false },
   6: { name: "Cân bằng điểm", desc: "Điểm của đội được đưa về bằng với đội đang có ít điểm nhất.", rare: true }
@@ -193,7 +193,11 @@ function awardCorrect() {
     game.pendingBuff = { group: g, name: r.name, buffChoices, chosen: false, target: null };
     io.emit("buffChoiceOpened", { group: g, name: r.name, choices: buffChoices });
   } else {
+    // Câu không có buff đã kết thúc hoàn toàn: giải phóng người trả lời
+    // để MC có thể bấm MỞ CÂU TIẾP THEO.
     game.pendingBuff = null;
+    game.activeResponder = null;
+    game.pendingAnswer = null;
   }
   io.emit("state", snapshot());
 }
