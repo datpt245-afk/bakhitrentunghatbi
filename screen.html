@@ -146,6 +146,16 @@
       color: #94a3b8;
       margin-top: 5px;
     }
+    #blindBoxArea { display:none; margin:18px auto 24px; text-align:center; max-width:1050px; }
+    .blind-title { font-size:30px; font-weight:1000; color:#d8b4fe; margin-bottom:8px; text-transform:uppercase; }
+    .blind-sub { color:#cbd5e1; font-size:18px; margin-bottom:18px; }
+    .blind-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:22px; }
+    .blind-box { min-height:250px; border-radius:24px; border:3px solid #a855f7; background:linear-gradient(145deg,#312e81,#581c87); color:#fff; box-shadow:0 15px 35px rgba(0,0,0,.45),0 0 28px rgba(168,85,247,.22); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:.25s; }
+    .blind-box .icon { font-size:86px; line-height:1; }
+    .blind-box .label { font-size:28px; font-weight:1000; margin-top:18px; }
+    .blind-box.chosen { border-color:#facc15; background:linear-gradient(145deg,#854d0e,#a16207); transform:scale(1.04); box-shadow:0 0 45px rgba(250,204,21,.45); }
+    .blind-box.revealed { border-color:#4ade80; background:linear-gradient(145deg,#14532d,#166534); }
+    @media (max-width:800px) { .blind-grid{grid-template-columns:1fr}.blind-box{min-height:180px} }
 
     /* ĐỒNG HỒ ĐẾM NGƯỢC 5 GIÂY */
     .timer-display {
@@ -371,7 +381,17 @@
       <h2 style="margin-top:0; color:#38bdf8; display:flex; align-items:center; gap:8px;">
         🌊 BỂ BƠI THI ĐẤU TRỰC TIẾP
       </h2>
-      <div id="screenRace"></div>
+      <div id="blindBoxArea">
+      <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
+      <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
+      <div class="blind-grid">
+        <div class="blind-box" id="blindBox0"><div class="icon">📦</div><div class="label">HỘP 1</div></div>
+        <div class="blind-box" id="blindBox1"><div class="icon">📦</div><div class="label">HỘP 2</div></div>
+        <div class="blind-box" id="blindBox2"><div class="icon">📦</div><div class="label">HỘP 3</div></div>
+      </div>
+    </div>
+
+    <div id="screenRace"></div>
       <div id="screenScores" class="scoreboard"></div>
     </div>
   </div>
@@ -615,6 +635,7 @@
     }
 
     socket.on("questionOpened", x => {
+      qs("blindBoxArea").style.display = "none";
       stop5SecTimer();
       qs("rulesOverlay").classList.add("hidden");
       qs("screenWinner").textContent = `❓ CÂU HỎI SỐ ${x.index + 1}`;
@@ -627,7 +648,7 @@
     socket.on("buzzed", x => {
       playSound('buzz');
       qs("screenWinner").textContent = `🚨 ${x.name.toUpperCase()} (NHÓM ${x.group}) GIÀNH QUYỀN TRẢ LỜI!`;
-      qs("screenStatus").textContent = "Các chuông khác đã khóa. Người chơi chọn đáp án, sau đó MC xác nhận.";
+      qs("screenStatus").textContent = "Các chuông khác đã khóa. MC gọi người chơi đứng dậy trả lời bằng miệng.";
     });
 
     socket.on("answerSelected", x => {
@@ -655,12 +676,24 @@
     });
 
     socket.on("buffChoiceOpened", x => {
-      qs("screenWinner").textContent = `🎁 ${x.name} (NHÓM ${x.group}) ĐANG CHỌN HỘP BÍ ẨN`;
-      qs("screenStatus").textContent = "Chờ người chơi chọn 1 trong 3 hộp.";
+      qs("blindBoxArea").style.display = "block";
+      [0,1,2].forEach(i => { qs("blindBox"+i).classList.remove("chosen","revealed"); qs("blindBox"+i).innerHTML = `<div class="icon">📦</div><div class="label">HỘP ${i+1}</div>`; });
+      qs("screenWinner").textContent = `🎁 ${x.name} (NHÓM ${x.group}) TRẢ LỜI ĐÚNG!`;
+      qs("screenStatus").textContent = "Đội trả lời hãy nói với MC: chọn Hộp 1, Hộp 2 hoặc Hộp 3.";
+    });
+
+    socket.on("buffBoxChosen", x => {
+      qs("blindBoxArea").style.display = "block";
+      [0,1,2].forEach(i => qs("blindBox"+i).classList.toggle("chosen", i === Number(x.choice)));
+      qs("screenWinner").textContent = `🎁 ĐÃ CHỌN HỘP ${Number(x.choice)+1}`;
+      qs("screenStatus").textContent = "MC đang mở hộp...";
     });
 
     socket.on("buffRevealedMC", x => {
-      qs("screenWinner").textContent = `🎁 BUFF: ${x.buff.name}`;
+      qs("blindBoxArea").style.display = "block";
+      qs("blindBox"+Number(x.choice)).classList.add("revealed");
+      qs("blindBox"+Number(x.choice)).innerHTML = `<div class="icon">✨</div><div class="label">${x.buff.name}</div>`;
+      qs("screenWinner").textContent = `🎁 HỘP ${Number(x.choice)+1}: ${x.buff.name}`;
       qs("screenStatus").textContent = x.buff.desc;
     });
 
@@ -669,11 +702,13 @@
     });
 
     socket.on("questionSkipped", () => {
+      qs("blindBoxArea").style.display = "none";
       qs("screenWinner").textContent = "⏭️ CÂU HỎI ĐÃ KẾT THÚC";
       qs("screenStatus").textContent = "MC bấm mở câu tiếp theo khi sẵn sàng.";
     });
 
     socket.on("resetBuzz", () => {
+      qs("blindBoxArea").style.display = "none";
       stop5SecTimer();
       qs("screenWinner").textContent = "🔔 CHUÔNG ĐÃ MỞ LẠI!";
       qs("screenStatus").textContent = "Mời các nhóm còn lại cướp quyền trả lời!";

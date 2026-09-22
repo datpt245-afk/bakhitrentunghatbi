@@ -179,18 +179,16 @@ io.on("connection", socket => {
     game.activeResponder = { group: g, name: String(name || ""), socketId: socket.id };
     game.pendingAnswer = null;
     io.emit("buzzed", { group: g, name: game.activeResponder.name });
-    socket.emit("answerAccess", { group: g, name: game.activeResponder.name, question: game.questions[game.currentQuestion] });
     io.emit("state", snapshot());
   });
 
-  socket.on("submitAnswer", ({ index, name, group }) => {
-    const g = String(group);
-    if (!game.activeResponder || game.activeResponder.group !== g || game.activeResponder.name !== name) return;
-    if (game.pendingAnswer) return;
+  // MC chọn đáp án mà người chơi vừa trả lời bằng miệng.
+  socket.on("mcSelectAnswer", ({ index }) => {
+    if (!game.activeResponder || game.pendingAnswer) return;
     const currentQ = game.questions[game.currentQuestion];
     if (!currentQ || !Number.isInteger(index) || index < 0 || index > 3) return;
-    game.pendingAnswer = { index, name, group: g };
-    io.emit("answerSelected", { index, name, group: g });
+    game.pendingAnswer = { index, name: game.activeResponder.name, group: String(game.activeResponder.group) };
+    io.emit("answerSelected", game.pendingAnswer);
     io.emit("state", snapshot());
   });
 
@@ -229,8 +227,10 @@ io.on("connection", socket => {
     const p = game.pendingBuff;
     if (!p || p.chosen || Number(choice) < 0 || Number(choice) > 2) return;
     p.chosen = true;
+    p.choice = Number(choice);
+    io.emit("buffBoxChosen", { group: p.group, name: p.name, choice: Number(choice) });
     const buffId = p.buffId;
-    io.to(game.activeResponder?.socketId).emit("buffRevealed", { buffId, buff: BUFFS[buffId] });
+    io.emit("buffRevealed", { group: p.group, name: p.name, choice: Number(choice), buffId, buff: BUFFS[buffId] });
     io.emit("buffRevealedMC", { group: p.group, name: p.name, buffId, buff: BUFFS[buffId] });
     if (buffId === 1) applyBuff1(p);
     else if (buffId === 2) applyBuff2(p);

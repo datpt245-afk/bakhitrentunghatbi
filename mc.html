@@ -56,6 +56,11 @@
 
           <div id="buffPanel" class="card" style="display:none; margin-top:14px; background:#0f172a; border:1px solid #a855f7;">
             <div id="buffStatus" style="font-weight:900; color:#d8b4fe; margin-bottom:10px;"></div>
+            <div id="buffChoices" class="row" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(0)">📦 HỘP 1</button>
+              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(1)">📦 HỘP 2</button>
+              <button class="btn primary buff-choice" onclick="chooseBuffFromMC(2)">📦 HỘP 3</button>
+            </div>
           </div>
           
           <div class="row" style="margin-top: 16px;">
@@ -409,8 +414,9 @@
       qs("qbox").textContent = `Câu ${state.currentQuestion + 1}: ${q.q}`;
       const labels = ["A", "B", "C", "D"];
       const selected = state.pendingAnswer?.index;
+      const canSelect = !!state.activeResponder && !state.pendingAnswer && !reveal;
       qs("opts").innerHTML = q.options.map((o, i) => `
-        <div class="opt ${selected === i ? 'selected-answer' : ''} ${reveal && i === q.answer ? 'correct' : ''}" ${selected === i && !reveal ? 'onclick="checkSelectedAnswer()" style="cursor:pointer"' : ''}>
+        <div class="opt ${selected === i ? 'selected-answer' : ''} ${reveal && i === q.answer ? 'correct' : ''}" ${canSelect ? `onclick="selectAnswer(${i})" style="cursor:pointer"` : ''}>
           ${labels[i]}. ${o} ${reveal && i === q.answer ? ' ✓' : ''}${selected === i ? ' 🔎' : ''}
         </div>
       `).join("");
@@ -439,9 +445,14 @@
       socket.emit("nextQuestion");
     }
 
-    function checkSelectedAnswer() { socket.emit("judgeAnswer", { correct: true }); }
+    function selectAnswer(index) { socket.emit("mcSelectAnswer", { index }); }
+    function checkSelectedAnswer() { socket.emit("judgeAnswer"); }
     function allowSteal() { socket.emit("allowSteal"); }
     function skipQuestion() { socket.emit("skipQuestion"); }
+    function chooseBuffFromMC(choice) {
+      socket.emit("chooseBuff", { choice });
+      document.querySelectorAll("#buffChoices .buff-choice").forEach(b=>b.disabled=true);
+    }
 
     function renderJudgePanel() {
       const jp = qs("judgePanel"), wp = qs("wrongPanel");
@@ -540,12 +551,12 @@
 
     socket.on("buzzed", x => {
       qs("winner").textContent = `🚨 ${x.name.toUpperCase()} (NHÓM ${x.group}) GIÀNH QUYỀN!`;
-      qs("status").textContent = "Đang chờ người chơi chọn đáp án. Các chuông khác đã khóa.";
+      qs("status").textContent = "MC gọi người vừa bấm chuông đứng dậy trả lời. Sau đó MC bấm vào A/B/C/D để ghi nhận câu trả lời.";
     });
 
     socket.on("answerSelected", x => {
       qs("winner").textContent = `🔎 ${x.name} (NHÓM ${x.group}) ĐÃ CHỌN ĐÁP ÁN`;
-      qs("status").textContent = "MC hãy kiểm tra đáp án được đánh dấu và bấm ĐÚNG hoặc SAI.";
+      qs("status").textContent = "MC hãy chọn A/B/C/D theo câu trả lời miệng của người chơi, rồi bấm KIỂM TRA.";
       if (state) { state.pendingAnswer = x; render(state); }
     });
 
@@ -570,7 +581,13 @@
 
     socket.on("buffChoiceOpened", x => {
       qs("buffPanel").style.display = "block";
-      qs("buffStatus").textContent = `🎁 ${x.name} (Nhóm ${x.group}) đang chọn 1 trong 3 hộp bí ẩn.`;
+      qs("buffStatus").textContent = `🎁 ${x.name} (Nhóm ${x.group}) đã trả lời đúng. Đội nói với MC chọn hộp nào.`;
+      document.querySelectorAll("#buffChoices .buff-choice").forEach(b=>b.disabled=false);
+    });
+
+    socket.on("buffBoxChosen", x => {
+      qs("buffStatus").textContent = `🎁 Đội ${x.group} chọn Hộp ${Number(x.choice)+1}. MC đã xác nhận lựa chọn.`;
+      document.querySelectorAll("#buffChoices .buff-choice").forEach((b,i)=>b.disabled=true);
     });
 
     socket.on("buffRevealedMC", x => {

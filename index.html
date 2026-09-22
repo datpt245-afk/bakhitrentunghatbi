@@ -35,17 +35,12 @@ function buzz(){
   s.emit("buzz",{group,name});
 }
 
-s.on("answerAccess", data => {
-  sessionStorage.setItem("answerData", JSON.stringify(data));
-  location.href = "/answer.html";
-});
-
 s.on("buzzed",x=>{
   document.getElementById("buzz").disabled=true;
   if(x.group === group) {
-    status.textContent=`🚨 ${x.name} (Nhóm bạn) đã giành quyền trả lời!`;
+    status.textContent=`🚨 Bạn đã giành quyền! MC sẽ gọi bạn đứng dậy để trả lời.`;
   } else {
-    status.textContent=`🔒 Nhóm ${x.group} (${x.name}) đang trả lời...`;
+    status.textContent=`🔒 Nhóm ${x.group} đang trả lời...`;
   }
 });
 
@@ -69,6 +64,25 @@ s.on("wrong",x=>{
     status.textContent=`🔔 Nhóm ${x.group} trả lời sai. Chờ MC quyết định mở cướp quyền.`;
   }
 });
+
+s.on("buffChoiceOpened", x=>{
+  if(String(x.group)!==String(group)) return;
+  document.getElementById("buzz").disabled=true;
+  status.textContent="🎁 Đội bạn trả lời đúng. Hãy nói với MC bạn chọn hộp 1, 2 hoặc 3.";
+});
+s.on("buffBoxChosen", x=>{
+  if(String(x.group)!==String(group)) return;
+  status.textContent=`🎁 MC đã chọn hộp ${Number(x.choice)+1} theo lựa chọn của đội bạn.`;
+});
+s.on("buffRevealed", x=>{
+  if(String(x.group)!==String(group)) return;
+  status.textContent=`🎉 ${x.buff.name}: ${x.buff.desc}`;
+});
+s.on("buffApplied", x=>{
+  if(x.group && String(x.group)!==String(group)) return;
+  status.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo.";
+});
+s.on("buffFinished", ()=>{ status.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo."; });
 
 s.on("state", st => {
   currentState=st;
