@@ -1,16 +1,23 @@
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Duck Race - Chuông</title><link rel="stylesheet" href="/style.css">
 <style>body{display:grid;place-items:center;user-select:none;-webkit-user-select:none;touch-action:manipulation}.box{width:min(94vw,520px);text-align:center}.team{font-size:24px;font-weight:900}.name{margin:18px 0}.buzz{display:block;margin:20px auto;width:230px;height:230px;border:0;border-radius:50%;background:#ed4d62;color:#fff;font-size:31px;font-weight:900;box-shadow:0 15px #a52d3d;cursor:pointer;transition:transform 0.05s, background 0.2s}.buzz:active{transform:translateY(10px);box-shadow:0 5px #a52d3d}.buzz:disabled{opacity:.35;cursor:not-allowed;background:#747d8c;box-shadow:none}.status{min-height:30px;font-weight:bold;margin-top:10px}</style></head>
-<body><div class="card box"><h1>🔔 DUCK RACE</h1><div class="team" id="team"></div><div id="join">
-<input id="name" class="name" placeholder="Nhập tên thành viên"><button class="btn primary" onclick="join()">Vào chuông</button>
+<body><div class="card box"><h1>🔔 DUCK RACE</h1><div class="team" id="team">NHẬP THÔNG TIN ĐỂ VÀO CHUÔNG</div><div id="join">
+<input id="name" class="name" placeholder="Nhập tên thành viên" autocomplete="off">
+<select id="groupSelect" class="name" style="width:100%;padding:14px;border-radius:10px;font-size:18px;font-weight:700">
+<option value="1">Nhóm 1</option><option value="2">Nhóm 2</option><option value="3">Nhóm 3</option><option value="4">Nhóm 4</option><option value="5">Nhóm 5</option>
+</select>
+<button class="btn primary" style="width:100%;font-size:20px;padding:15px" onclick="join()">VÀO CHUÔNG</button>
 </div><div id="play" style="display:none"><div class="muted" id="me"></div><button id="buzz" class="buzz" onclick="buzz()">🔔<br>BẤM CHUÔNG</button><div id="status" class="status">Đang chờ MC mở câu hỏi...</div></div></div>
 <script src="/socket.io/socket.io.js"></script><script>
-const p=new URLSearchParams(location.search),group=p.get("group")||"1",s=io();let name="";
+const p=new URLSearchParams(location.search);let group=p.get("group")||sessionStorage.getItem("userGroup")||"1";const s=io();let name="";let currentState=null;
+const groupSelect=document.getElementById("groupSelect");groupSelect.value=group;
 team.textContent="NHÓM "+group;
 
 // Tự động khôi phục tên nếu đã từng nhập
 window.addEventListener("DOMContentLoaded", () => {
   const savedName = sessionStorage.getItem("userName");
-  if (savedName) {
+  const savedGroup = sessionStorage.getItem("userGroup");
+  if (savedGroup) { group=savedGroup; groupSelect.value=group; team.textContent="NHÓM "+group; }
+  if (savedName && savedGroup) {
     document.getElementById("name").value = savedName;
     join();
   }
@@ -18,6 +25,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
 function join(){
   name=document.getElementById("name").value.trim();
+  group=groupSelect.value;
+  team.textContent="NHÓM "+group;
   if(!name)return alert("Nhập tên trước nhé!");
   sessionStorage.setItem("userName", name);
   sessionStorage.setItem("userGroup", group);
