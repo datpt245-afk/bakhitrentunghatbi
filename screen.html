@@ -286,22 +286,6 @@
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255,255,255,0.1);
     }
-    .finish-line {
-      position: absolute;
-      right: 25px;
-      top: 0;
-      bottom: 0;
-      width: 10px;
-      background: repeating-linear-gradient(
-        0deg,
-        #fff, #fff 10px,
-        #000 10px, #000 20px
-      );
-      z-index: 2;
-      opacity: 0.85;
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
-    }
-
     .duck-wrapper {
       position: absolute;
       bottom: 6px;
@@ -422,7 +406,7 @@
 
       <div class="lobby-status">⏳ ĐANG CHỜ MC BẤM BẮT ĐẦU TRÒ CHƠI...</div>
       <div>
-        <button class="activate-sound-btn" onclick="startChillMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button>
+        <button class="activate-sound-btn" onclick="startGameMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button>
       </div>
     </div>
   </div>
@@ -430,7 +414,7 @@
   <div id="effectLayer" class="effect-layer"></div>
 
   <div class="screen-container">
-    <button id="audioToggleBtn" class="audio-control-btn" onclick="toggleAudio()">🎵 Nhạc Chill: BẬT</button>
+    <button id="audioToggleBtn" class="audio-control-btn" onclick="toggleAudio()">🎵 Nhạc Game: BẬT</button>
 
     <div class="status-banner">
       <div id="screenWinner" class="winner-title">🦆 ĐƯỜNG ĐUA VỊT 2D SẴN SÀNG!</div>
@@ -475,13 +459,12 @@
 
     let soundEnabled = true;
 
-    // --- NHẠC NỀN LOFI CHILL ---
-    const chillBGM = new Audio("https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3");
-    chillBGM.loop = true;
-    chillBGM.volume = 0.25;
-
-    // --- BỘ TẠO ÂM THANH HIỆU ỨNG TRỰC TIẾP (WEB AUDIO API) ---
+    // --- NHẠC NỀN GAME SÔI ĐỘNG ---
+    // Dùng Web Audio API để tạo một loop arcade/race tại chỗ, không còn nhạc lo-fi chill.
     let audioCtx = null;
+    let gameMusicTimer = null;
+    let gameMusicStep = 0;
+    let gameMusicRunning = false;
 
     function initAudioContext() {
       if (!audioCtx) {
@@ -570,25 +553,55 @@
       }
     }
 
-    function startChillMusic() {
-      if (soundEnabled && chillBGM.paused) {
-        chillBGM.play().then(() => {
-          qs("audioToggleBtn").textContent = "🎵 Nhạc Chill: ĐANG PHÁT";
-        }).catch(() => {});
+    function playGameMusicStep() {
+      if (!soundEnabled || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const step = gameMusicStep % 16;
+      const bass = [110,110,147,110,123,123,165,123,98,98,131,98,110,110,147,165][step];
+      const lead = [440,523,659,523,494,587,740,587,392,494,587,494,440,523,659,784][step];
+
+      // Bass + lead tạo cảm giác chạy đua, nhanh và vui hơn.
+      tone(bass, now, 0.20, 'sawtooth', 0.055, bass * 0.96);
+      tone(lead, now, 0.12, 'square', 0.035);
+
+      // Kick ở các nhịp chính, snare ở nhịp phụ.
+      if (step % 4 === 0) {
+        tone(75, now, 0.10, 'sine', 0.12, 42);
+      } else if (step % 4 === 2) {
+        noiseBurst(now, 0.07, 0.045);
       }
+      gameMusicStep++;
+    }
+
+    function startGameMusic() {
+      initAudioContext();
+      if (!soundEnabled || !audioCtx || gameMusicRunning) return;
+      gameMusicRunning = true;
+      gameMusicStep = 0;
+      playGameMusicStep();
+      gameMusicTimer = setInterval(playGameMusicStep, 250);
+      qs("audioToggleBtn").textContent = "🎵 Nhạc Game: ĐANG PHÁT";
+    }
+
+    function stopGameMusic() {
+      if (gameMusicTimer) {
+        clearInterval(gameMusicTimer);
+        gameMusicTimer = null;
+      }
+      gameMusicRunning = false;
     }
 
     function toggleAudio() {
       soundEnabled = !soundEnabled;
       const btn = qs("audioToggleBtn");
       if (soundEnabled) {
-        chillBGM.play();
-        btn.textContent = "🎵 Nhạc Chill: ĐANG PHÁT";
+        startGameMusic();
+        btn.textContent = "🎵 Nhạc Game: ĐANG PHÁT";
         btn.style.background = "rgba(56, 189, 248, 0.2)";
         btn.style.color = "#38bdf8";
       } else {
-        chillBGM.pause();
-        btn.textContent = "🔇 Nhạc Chill: TẮT";
+        stopGameMusic();
+        btn.textContent = "🔇 Nhạc Game: TẮT";
         btn.style.background = "#64748b";
         btn.style.color = "#fff";
       }
@@ -600,7 +613,7 @@
 
     window.addEventListener('click', () => { 
       initAudioContext(); 
-      startChillMusic(); 
+      startGameMusic(); 
     }, { once: true });
 
     // Cấu hình Bảng màu định danh chuẩn xác theo Số Nhóm (Group ID)
@@ -628,7 +641,7 @@
 
       if (state.started || state.currentQuestion >= 0) {
         qs("rulesOverlay").classList.add("hidden");
-        startChillMusic();
+        startGameMusic();
       } else {
         qs("rulesOverlay").classList.remove("hidden");
       }
@@ -643,7 +656,7 @@
 
     socket.on("gameStarted", () => {
       qs("rulesOverlay").classList.add("hidden");
-      startChillMusic();
+      startGameMusic();
     });
 
     function setQuestionVisible(visible) {
@@ -732,12 +745,12 @@
       let rawTeams = Array.isArray(x.teams) ? x.teams : Object.entries(x.teams).map(([k, v]) => ({ key: k, ...v }));
       const activeTeams = rawTeams;
 
-      const maxScore = Math.max(...activeTeams.map(t => Number(t.duckPos) || 0), 1);
-
+      // Vịt chỉ tiến về phía trước theo duckPos; không co giãn theo đội dẫn đầu
+      // để khi đội khác vượt lên, vị trí của vịt cũ không bị "lùi" trên màn chiếu.
       qs("screenRace").innerHTML = activeTeams.map(t => {
         const score = Number(t.score) || 0;
         const duckPos = Number(t.duckPos) || 0;
-        const pct = duckPos === 0 ? 2 : Math.min(85, Math.max(2, (duckPos / Math.max(maxScore, 10)) * 85));
+        const pct = Math.min(88, Math.max(2, 2 + duckPos * 1.1));
         
         const gId = getGroupId(t);
         const c = teamColors[gId] || { body: "#38bdf8", wing: "#0284c7" };
@@ -751,8 +764,7 @@
               ${getDuckSVG(c.body, c.wing)}
             </div>
 
-            <div class="finish-line"></div>
-          </div>
+                </div>
         `;
       }).join("");
     }
@@ -765,9 +777,7 @@
       stone.className = "stone-obstacle";
       stone.textContent = "🪨";
       const hitPos = Number(x.hitPos) || 0;
-      const teams = Object.values(currentGameState?.teams || {});
-      const maxScore = Math.max(...teams.map(t => Number(t.duckPos) || 0), hitPos, 10);
-      const pct = hitPos === 0 ? 2 : Math.min(85, Math.max(2, (hitPos / maxScore) * 85));
+      const pct = Math.min(88, Math.max(2, 2 + hitPos * 1.1));
       stone.style.left = pct + "%";
       lane.appendChild(stone);
       const impact = document.createElement("div");
@@ -806,7 +816,7 @@
       qs("screenWinner").textContent = `❓ CÂU HỎI SỐ ${x.index + 1}`;
       qs("screenStatus").textContent = "Các nhóm nhanh tay bấm chuông giành quyền trả lời!";
       showQuestion(x.question, false);
-      startChillMusic();
+      startGameMusic();
     });
 
     // --- CHUÔNG: chỉ giành quyền, không có đồng hồ ép trả lời ---
@@ -825,7 +835,11 @@
     socket.on("result", x => {
       playSound('correct');
       qs("screenWinner").textContent = `🎉 ${x.name} (NHÓM ${x.group}) TRẢ LỜI ĐÚNG!`;
-      qs("screenStatus").textContent = `+${x.teamStep} điểm nhóm | +${x.personalPoint} điểm cá nhân — Đang chọn hộp bí ẩn.`;
+      if (x.hasBuff) {
+        qs("screenStatus").textContent = `+${x.teamStep} điểm nhóm | +${x.personalPoint} điểm cá nhân — Câu này có hộp bí ẩn.`;
+      } else {
+        qs("screenStatus").textContent = `+${x.teamStep} điểm nhóm | +${x.personalPoint} điểm cá nhân — Câu này không có buff.`;
+      }
       if (currentGameState) { currentGameState.pendingAnswer = null; currentGameState.answerRevealed = true; }
       setQuestionVisible(false);
     });
@@ -909,6 +923,9 @@
         qs("swapTargetPanel").style.display = "none";
         qs("screenWinner").textContent = `🔄 NHÓM ${x.group} ↔ NHÓM ${x.targetGroup}`;
         qs("screenStatus").textContent = "Điểm của hai nhóm đã được hoán đổi.";
+      } else if (Number(x.buffId) === 5) {
+        qs("screenWinner").textContent = `⚡ NHÓM ${x.group} TĂNG TỐC +3!`;
+        qs("screenStatus").textContent = `🦆 Vịt tiến 3 ô và nhận thêm ${x.scoreAdded ?? 3} điểm!`;
       } else if (Number(x.buffId) === 6) {
         qs("screenWinner").textContent = `⚖️ NHÓM ${x.group} CÂN BẰNG ĐIỂM!`;
         qs("screenStatus").textContent = `Điểm được đưa về bằng nhóm ${x.targetGroup} — ${x.newScore} điểm.`;
@@ -934,10 +951,11 @@
       qs("screenStatus").textContent = "Mời các nhóm còn lại cướp quyền trả lời!";
     });
 
-    socket.on("gameFinished", () => {
+    socket.on("gameFinished", x => {
       stop5SecTimer();
-      qs("screenWinner").textContent = "🏆 TRÒ CHƠI KẾT THÚC!";
-      qs("screenStatus").textContent = "Xin chúc mừng các cá nhân và nhóm giành chiến thắng!";
+      const winner = x?.winner;
+      qs("screenWinner").textContent = winner ? `🏆 NHÓM ${winner.group} ĐI XA NHẤT!` : "🏆 TRÒ CHƠI KẾT THÚC!";
+      qs("screenStatus").textContent = winner ? `🦆 ${winner.duckPos} ô — Không có vạch đích, đội đi xa nhất là đội thắng.` : "Không có dữ liệu xếp hạng.";
     });
   </script>
 </body>

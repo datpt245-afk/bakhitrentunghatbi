@@ -18,7 +18,7 @@ const BUFFS = {
   2: { name: "Nhân đôi điểm", desc: "Nhân đôi số điểm vừa nhận từ câu hỏi này.", rare: false },
   3: { name: "Vấp đá", desc: "Vịt đâm vào hòn đá, mất 1 điểm và lùi 1 ô.", rare: false },
   4: { name: "Hoán đổi điểm", desc: "Đổi toàn bộ điểm với một đội khác.", rare: false },
-  5: { name: "Tăng tốc", desc: "Vịt của đội tiến 5 ô.", rare: false },
+  5: { name: "Tăng tốc", desc: "Vịt của đội tiến 3 ô và nhận thêm 3 điểm.", rare: false },
   6: { name: "Cân bằng điểm", desc: "Điểm của đội được đưa về bằng với đội đang có ít điểm nhất.", rare: true }
 };
 
@@ -41,7 +41,8 @@ let game = {
   pendingBuff: null,
   scoring: { teamStep: 2, personalPoint: 1 },
   boxStats: { openedSince4: 0, openedSince6: 0, selected4: 0, selected6: 0 },
-  lastStealTarget: null
+  lastStealTarget: null,
+  buffQuestionIndexes: []
 };
 
 function loadQuestions() {
@@ -78,18 +79,40 @@ function clearPending() {
   game.wrongPending = null;
 }
 
+function randomizeBuffQuestions() {
+  const count = Math.min(12, game.questions.length);
+  const indexes = Array.from({ length: game.questions.length }, (_, i) => i);
+  for (let i = indexes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indexes[i], indexes[j]] = [indexes[j], indexes[i]];
+  }
+  game.buffQuestionIndexes = indexes.slice(0, count).sort((a, b) => a - b);
+}
+
+function currentQuestionHasBuff() {
+  return game.buffQuestionIndexes.includes(game.currentQuestion);
+}
+
 function triggerNextQuestion() {
   clearPending();
   game.answerRevealed = false;
   game.activeResponder = null;
   game.lockedGroups = [];
   if (game.currentQuestion + 1 < game.questions.length) {
+    if (game.currentQuestion === -1 || !game.buffQuestionIndexes.length) randomizeBuffQuestions();
     game.currentQuestion++;
     game.questionOpen = true;
-    io.emit("questionOpened", { index: game.currentQuestion, question: game.questions[game.currentQuestion] });
+    io.emit("questionOpened", {
+      index: game.currentQuestion,
+      question: game.questions[game.currentQuestion],
+      hasBuff: currentQuestionHasBuff()
+    });
   } else {
     game.questionOpen = false;
-    io.emit("gameFinished");
+    const ranking = Object.entries(game.teams)
+      .map(([group, team]) => ({ group, name: team.name, duckPos: Number(team.duckPos) || 0, score: Number(team.score) || 0 }))
+      .sort((a, b) => b.duckPos - a.duckPos || b.score - a.score);
+    io.emit("gameFinished", { ranking, winner: ranking[0] || null });
   }
   io.emit("state", snapshot());
 }
@@ -155,16 +178,23 @@ function awardCorrect() {
   }
   game.questionOpen = false;
   game.answerRevealed = true;
-  const buffChoices = makeBuffChoices(g);
-  game.pendingBuff = { group: g, name: r.name, buffChoices, chosen: false, target: null };
+  const hasBuff = currentQuestionHasBuff();
   io.emit("result", {
     correct: true,
     name: r.name,
     group: g,
     teamStep: base,
-    personalPoint: Math.max(1, Number(game.scoring.personalPoint) || 1)
+    personalPoint: Math.max(1, Number(game.scoring.personalPoint) || 1),
+    hasBuff
   });
-  io.emit("buffChoiceOpened", { group: g, name: r.name, choices: buffChoices });
+
+  if (hasBuff) {
+    const buffChoices = makeBuffChoices(g);
+    game.pendingBuff = { group: g, name: r.name, buffChoices, chosen: false, target: null };
+    io.emit("buffChoiceOpened", { group: g, name: r.name, choices: buffChoices });
+  } else {
+    game.pendingBuff = null;
+  }
   io.emit("state", snapshot());
 }
 
@@ -316,7 +346,6 @@ io.on("connection", socket => {
       game.lastStealTarget = target;
       const amount = Math.min(2, game.teams[target].score);
       game.teams[target].score -= amount;
-      game.teams[target].duckPos = Math.max(0, game.teams[target].duckPos - amount);
       game.teams[p.group].score += amount;
       game.teams[p.group].duckPos += amount;
       io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: target, amount });
@@ -336,13 +365,15 @@ io.on("connection", socket => {
     const team = game.teams[p.group];
     const hitPos = Number(team.duckPos) || 0;
     team.score = Math.max(0, Number(team.score) - 1);
-    team.duckPos = Math.max(0, hitPos - 1);
     io.emit("buffApplied", { group: p.group, buffId: 3, amount: -1, scoreLost: 1, hitPos });
     finishBuff();
   }
   function applyBuff5(p) {
-    game.teams[p.group].duckPos += 5;
-    io.emit("buffApplied", { group: p.group, buffId: 5, amount: 5 });
+    const team = game.teams[p.group];
+    const amount = 3;
+    team.score += amount;
+    team.duckPos += amount;
+    io.emit("buffApplied", { group: p.group, buffId: 5, amount, scoreAdded: amount });
     finishBuff();
   }
   function applyBuff6(p) {
@@ -392,6 +423,7 @@ io.on("connection", socket => {
     game.pendingBuff = null;
     game.boxStats = { openedSince4: 0, openedSince6: 0, selected4: 0, selected6: 0 };
     game.lastStealTarget = null;
+    game.buffQuestionIndexes = [];
     io.emit("fullReset");
     io.emit("state", snapshot());
   });
