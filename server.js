@@ -16,7 +16,7 @@ app.use(express.static(__dirname));
 const BUFFS = {
   1: { name: "Cướp 2 điểm", desc: "Trừ 2 điểm từ một đội khác được chọn ngẫu nhiên.", rare: false },
   2: { name: "Nhân đôi điểm", desc: "Nhân đôi số điểm vừa nhận từ câu hỏi này.", rare: false },
-  3: { name: "Vấp đá", desc: "Vịt của đội lùi 1 ô.", rare: false },
+  3: { name: "Vấp đá", desc: "Vịt đâm vào hòn đá, mất 1 điểm và lùi 1 ô.", rare: false },
   4: { name: "Hoán đổi điểm", desc: "Đổi toàn bộ điểm với một đội khác.", rare: false },
   5: { name: "Tăng tốc", desc: "Vịt của đội tiến 5 ô.", rare: false },
   6: { name: "Mất trắng", desc: "Mất toàn bộ điểm hiện có.", rare: true }
@@ -39,6 +39,7 @@ let game = {
   wrongPending: null,
   answerRevealed: false,
   pendingBuff: null,
+  lastStealTarget: null,
   scoring: { teamStep: 2, personalPoint: 1 }
 };
 
@@ -260,15 +261,21 @@ io.on("connection", socket => {
   });
 
   function applyBuff1(p) {
-    const choices = otherGroups(p.group).filter(g => game.teams[g].score > 0);
+    let choices = otherGroups(p.group).filter(g => game.teams[g].score > 0);
+    // Không cho cùng một đội bị random cướp 2 lần liên tiếp nếu vẫn còn lựa chọn khác.
+    const nonRepeatChoices = choices.filter(g => g !== game.lastStealTarget);
+    if (nonRepeatChoices.length) choices = nonRepeatChoices;
     if (choices.length) {
       const target = choices[Math.floor(Math.random() * choices.length)];
+      const targetPosBefore = Number(game.teams[target].duckPos) || 0;
+      const thiefPosBefore = Number(game.teams[p.group].duckPos) || 0;
       const amount = Math.min(2, game.teams[target].score);
       game.teams[target].score -= amount;
-      game.teams[target].duckPos = Math.max(0, game.teams[target].duckPos - amount);
+      game.teams[target].duckPos = Math.max(0, targetPosBefore - amount);
       game.teams[p.group].score += amount;
       game.teams[p.group].duckPos += amount;
-      io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: target, amount });
+      game.lastStealTarget = target;
+      io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: target, amount, thiefPosBefore, targetPosBefore, thiefPosAfter: game.teams[p.group].duckPos, targetPosAfter: game.teams[target].duckPos });
     } else {
       io.emit("buffApplied", { group: p.group, buffId: 1, targetGroup: null, amount: 0 });
     }
@@ -282,8 +289,11 @@ io.on("connection", socket => {
     finishBuff();
   }
   function applyBuff3(p) {
-    game.teams[p.group].duckPos = Math.max(0, game.teams[p.group].duckPos - 1);
-    io.emit("buffApplied", { group: p.group, buffId: 3, amount: -1 });
+    const team = game.teams[p.group];
+    const hitPos = Number(team.duckPos) || 0;
+    team.score = Math.max(0, Number(team.score) - 1);
+    team.duckPos = Math.max(0, hitPos - 1);
+    io.emit("buffApplied", { group: p.group, buffId: 3, amount: -1, scoreLost: 1, hitPos });
     finishBuff();
   }
   function applyBuff5(p) {
@@ -331,6 +341,7 @@ io.on("connection", socket => {
     game.wrongPending = null;
     game.answerRevealed = false;
     game.pendingBuff = null;
+    game.lastStealTarget = null;
     io.emit("fullReset");
     io.emit("state", snapshot());
   });

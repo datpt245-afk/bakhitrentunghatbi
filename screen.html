@@ -323,6 +323,90 @@
       100% { transform: scale(1.4) translateX(-15px); opacity: 0; }
     }
 
+    .stone-obstacle {
+      position: absolute;
+      bottom: 2px;
+      transform: translateX(-50%);
+      z-index: 5;
+      font-size: 44px;
+      line-height: 1;
+      filter: drop-shadow(0 5px 4px rgba(0,0,0,0.55));
+      pointer-events: none;
+      animation: stoneCrash 1.15s ease-out forwards;
+    }
+    @keyframes stoneCrash {
+      0% { transform: translateX(-50%) scale(0.2) rotate(-20deg); opacity: 0; }
+      28% { transform: translateX(-50%) scale(1.18) rotate(8deg); opacity: 1; }
+      45% { transform: translateX(-50%) scale(1) rotate(-5deg); }
+      100% { transform: translateX(-50%) scale(1) rotate(0deg); opacity: 1; }
+    }
+    .stone-impact {
+      position: absolute;
+      bottom: 34px;
+      transform: translateX(-50%);
+      z-index: 6;
+      font-size: 26px;
+      pointer-events: none;
+      animation: impactPop 0.8s ease-out forwards;
+    }
+    @keyframes impactPop {
+      0% { transform: translateX(-50%) scale(0.2); opacity: 0; }
+      35% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+      100% { transform: translateX(-50%) scale(0.8) translateY(-12px); opacity: 0; }
+    }
+    .duck-hit { animation: duckHit 0.65s ease-in-out !important; }
+    .duck-bonk { animation: duckBonk 0.55s ease-in-out !important; }
+    @keyframes duckBonk {
+      0% { transform: rotate(0deg) translateY(0); }
+      25% { transform: rotate(-18deg) translateY(5px); }
+      45% { transform: rotate(15deg) translateY(-2px); }
+      65% { transform: rotate(-10deg) translateY(4px); }
+      100% { transform: rotate(0deg) translateY(0); }
+    }
+    .steal-flyer {
+      position: fixed;
+      z-index: 99999;
+      pointer-events: none;
+      font-size: 58px;
+      line-height: 1;
+      transform-origin: center center;
+      filter: drop-shadow(0 8px 5px rgba(0,0,0,.45));
+      transition: left .78s cubic-bezier(.2,.85,.25,1), top .78s cubic-bezier(.2,.85,.25,1), transform .78s cubic-bezier(.2,.85,.25,1);
+    }
+    .steal-flyer .fly-duck { display:inline-block; transform: scaleX(-1); }
+    .steal-hammer {
+      position:absolute;
+      right:-18px;
+      top:-22px;
+      font-size:48px;
+      opacity:0;
+      transform:rotate(-35deg) scale(.5);
+    }
+    .steal-hammer.bonk { animation: hammerBonk .42s cubic-bezier(.2,.8,.2,1) forwards; }
+    @keyframes hammerBonk {
+      0% { opacity:0; transform:rotate(-55deg) scale(.55) translate(-12px,-12px); }
+      35% { opacity:1; transform:rotate(25deg) scale(1.12) translate(5px,8px); }
+      55% { opacity:1; transform:rotate(-8deg) scale(1) translate(0,0); }
+      100% { opacity:0; transform:rotate(-35deg) scale(.8) translate(-8px,-4px); }
+    }
+    .bonk-text {
+      position:absolute; left:50%; top:-45px; transform:translateX(-50%) scale(.4);
+      font-size:30px; font-weight:1000; color:#facc15; text-shadow:2px 2px 0 #111, -1px -1px 0 #111; opacity:0;
+      white-space:nowrap;
+    }
+    .bonk-text.show { animation: bonkText .7s ease-out forwards; }
+    @keyframes bonkText {
+      0% { opacity:0; transform:translateX(-50%) scale(.4) rotate(-8deg); }
+      25% { opacity:1; transform:translateX(-50%) scale(1.2) rotate(5deg); }
+      100% { opacity:0; transform:translateX(-50%) scale(1) translateY(-18px) rotate(-3deg); }
+    }
+    @keyframes duckHit {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      25% { transform: translateX(8px) rotate(12deg); }
+      50% { transform: translateX(-7px) rotate(-15deg); }
+      75% { transform: translateX(4px) rotate(8deg); }
+    }
+
     .scoreboard {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -407,6 +491,7 @@
     let currentGameState = null;
 
     let soundEnabled = true;
+    let stealAnimating = false;
 
     // --- NHẠC NỀN LOFI CHILL ---
     const chillBGM = new Audio("https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3");
@@ -425,65 +510,87 @@
       }
     }
 
+    function tone(freq, start, duration, type='sine', volume=0.18, endFreq=null) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      if (endFreq !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), start + duration);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(start); osc.stop(start + duration + 0.02);
+    }
+
+    function noiseBurst(start, duration=0.12, volume=0.08) {
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i=0;i<data.length;i++) data[i] = Math.random()*2-1;
+      const src = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      filter.type='bandpass'; filter.frequency.value=1800; filter.Q.value=1.2;
+      gain.gain.setValueAtTime(volume, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+duration);
+      src.buffer=buffer; src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+      src.start(start); src.stop(start+duration);
+    }
+
     function playSound(type) {
       if (!soundEnabled) return;
       initAudioContext();
       if (!audioCtx) return;
-
       const now = audioCtx.currentTime;
 
       if (type === 'buzz') {
-        // --- CHUÔNG BẤM CƯỚP QUYỀN (Tiếng BÍNG KENG ngân vang) ---
-        const osc1 = audioCtx.createOscillator();
-        const osc2 = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(1200, now);
-
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(2400, now);
-
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc1.start(now);
-        osc2.start(now);
-        osc1.stop(now + 0.8);
-        osc2.stop(now + 0.8);
-      } 
-      else if (type === 'correct') {
-        // --- TRẢ LỜI ĐÚNG (Tiếng Tinh Tinh 3 nốt nhạc chiến thắng) ---
-        [523.25, 659.25, 783.99].forEach((freq, i) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, now + i * 0.12);
-          gain.gain.setValueAtTime(0.4, now + i * 0.12);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.35);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now + i * 0.12);
-          osc.stop(now + i * 0.12 + 0.35);
-        });
-      } 
-      else if (type === 'wrong') {
-        // --- TRẢ LỜI SAI (Tiếng Tè Tè báo lỗi) ---
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.setValueAtTime(110, now + 0.15);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 0.45);
+        // Hồi hộp: chuông + hit ngắn
+        tone(880, now, 0.18, 'square', 0.22, 1180);
+        tone(1320, now+0.03, 0.55, 'sine', 0.16, 1050);
+        noiseBurst(now, 0.08, 0.06);
+      } else if (type === 'correct') {
+        // ĐÚNG: fanfare 5 nốt, sáng và dứt khoát
+        [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f, now+i*0.10, 0.30, 'triangle', 0.22));
+        tone(1046.5, now+0.46, 0.65, 'sine', 0.24);
+      } else if (type === 'wrong') {
+        // SAI: 3 hit giảm dần, tạo cảm giác hụt
+        tone(220, now, 0.22, 'sawtooth', 0.22, 150);
+        tone(165, now+0.18, 0.25, 'sawtooth', 0.18, 105);
+        tone(110, now+0.38, 0.38, 'sawtooth', 0.16, 70);
+      } else if (type === 'steal') {
+        // Nhường chuông: sweep + ding để kéo đội khác vào
+        tone(330, now, 0.18, 'square', 0.12, 660);
+        tone(660, now+0.18, 0.22, 'triangle', 0.18, 990);
+        tone(990, now+0.40, 0.50, 'sine', 0.20);
+      } else if (type === 'box') {
+        // Mở blind box: suspense tăng dần
+        [180,220,280,360,470,620].forEach((f,i)=>tone(f, now+i*0.09, 0.16, 'sine', 0.10));
+        noiseBurst(now+0.50, 0.12, 0.05);
+      } else if (type === 'buff1') {
+        // Cướp điểm: mischievous / jackpot
+        tone(392,now,.14,'square',.15,523); tone(523,now+.12,.14,'square',.15,659); tone(659,now+.24,.35,'triangle',.18,330);
+      } else if (type === 'bonk') {
+        // BONK: cú gõ búa ngắn, trầm và hài
+        tone(155,now,.12,'square',.24,95);
+        tone(82,now+.055,.28,'sawtooth',.20,58);
+        noiseBurst(now,0.12,0.16);
+        tone(260,now+.08,.10,'triangle',.10,130);
+      } else if (type === 'buff2') {
+        // Nhân đôi: power-up tăng cao
+        [392,523,659,784,1046].forEach((f,i)=>tone(f,now+i*.08,.24,'triangle',.18));
+        tone(1046,now+.40,.55,'sine',.22);
+      } else if (type === 'buff3') {
+        // Vấp đá: comic fall
+        tone(520,now,.18,'square',.16,350); tone(350,now+.16,.20,'square',.14,210); tone(210,now+.34,.35,'sawtooth',.14,90);
+      } else if (type === 'buff4') {
+        // Hoán đổi: whoosh lên xuống
+        tone(180,now,.35,'sine',.13,900); tone(900,now+.28,.35,'sine',.13,180); tone(660,now+.55,.55,'triangle',.18);
+      } else if (type === 'buff5') {
+        // Tăng tốc: race boost
+        tone(220,now,.65,'sawtooth',.12,1400); tone(880,now+.20,.55,'triangle',.16,1760); tone(1760,now+.45,.55,'sine',.20);
+      } else if (type === 'buff6') {
+        // Mất trắng: dramatic drop
+        tone(440,now,.25,'triangle',.15,330); tone(330,now+.20,.28,'triangle',.14,220); tone(220,now+.42,.80,'sawtooth',.18,55);
       }
     }
 
@@ -540,7 +647,7 @@
 
     socket.on("state", state => {
       currentGameState = state;
-      renderRace(state);
+      if (!stealAnimating) renderRace(state);
       renderScores(state);
 
       if (state.started || state.currentQuestion >= 0) {
@@ -622,7 +729,7 @@
         const c = teamColors[gId] || { body: "#38bdf8", wing: "#0284c7" };
 
         return `
-          <div class="lane-container">
+          <div class="lane-container" id="lane-${gId}">
             <div class="lane-info">${t.name || ('Nhóm ' + gId)} — ${score} điểm</div>
             
             <div class="duck-wrapper" style="left: ${pct}%;">
@@ -634,6 +741,30 @@
           </div>
         `;
       }).join("");
+    }
+
+    function showStoneHit(x) {
+      const group = String(x.group);
+      const lane = document.getElementById("lane-" + group);
+      if (!lane) return;
+      const stone = document.createElement("div");
+      stone.className = "stone-obstacle";
+      stone.textContent = "🪨";
+      const hitPos = Number(x.hitPos) || 0;
+      const teams = Object.values(currentGameState?.teams || {});
+      const maxScore = Math.max(...teams.map(t => Number(t.duckPos) || 0), hitPos, 10);
+      const pct = hitPos === 0 ? 2 : Math.min(85, Math.max(2, (hitPos / maxScore) * 85));
+      stone.style.left = pct + "%";
+      lane.appendChild(stone);
+      const impact = document.createElement("div");
+      impact.className = "stone-impact";
+      impact.textContent = "💥";
+      impact.style.left = pct + "%";
+      lane.appendChild(impact);
+      const duck = lane.querySelector(".duck-wrapper");
+      if (duck) { duck.classList.remove("duck-hit"); void duck.offsetWidth; duck.classList.add("duck-hit"); }
+      setTimeout(() => stone.remove(), 5000);
+      setTimeout(() => impact.remove(), 900);
     }
 
     function renderScores(x) {
@@ -690,12 +821,14 @@
     });
 
     socket.on("stealOpened", () => {
+      playSound("steal");
       qs("screenWinner").textContent = "🔔 CHUÔNG NHƯỜNG CHO BẠN KHÁC!";
       qs("screenStatus").textContent = "Các nhóm còn lại có thể bấm chuông để giành quyền trả lời câu này.";
       if (currentGameState) showQuestion(currentGameState.questions[currentGameState.currentQuestion], false);
     });
 
     socket.on("buffChoiceOpened", x => {
+      playSound("box");
       qs("blindBoxArea").style.display = "block";
       [0,1,2].forEach(i => { qs("blindBox"+i).classList.remove("chosen","revealed"); qs("blindBox"+i).innerHTML = `<div class="icon">📦</div><div class="label">HỘP ${i+1}</div>`; });
       qs("screenWinner").textContent = `🎁 ${x.name} (NHÓM ${x.group}) TRẢ LỜI ĐÚNG!`;
@@ -710,6 +843,7 @@
     });
 
     socket.on("buffRevealed", x => {
+      playSound("buff" + Number(x.buffId));
       qs("blindBoxArea").style.display = "block";
       const choice = Number(x.choice);
       [0,1,2].forEach(i => qs("blindBox"+i).classList.toggle("revealed", i === choice));
@@ -734,8 +868,63 @@
       }
     });
 
+
+    function animateSteal(x) {
+      const from = String(x.group);
+      const to = String(x.targetGroup);
+      const thief = document.querySelector(`#lane-${from} .duck-wrapper`);
+      const victim = document.querySelector(`#lane-${to} .duck-wrapper`);
+      if (!thief || !victim) {
+        if (currentGameState) renderRace(currentGameState);
+        return;
+      }
+
+      stealAnimating = true;
+      const a = thief.getBoundingClientRect();
+      const b = victim.getBoundingClientRect();
+      const flyer = document.createElement('div');
+      flyer.className = 'steal-flyer';
+      flyer.style.left = (a.left + a.width/2 - 28) + 'px';
+      flyer.style.top = (a.top + a.height/2 - 30) + 'px';
+      flyer.innerHTML = `<span class="fly-duck">🦆</span><span class="steal-hammer">🔨</span><span class="bonk-text">BONK!</span>`;
+      document.body.appendChild(flyer);
+
+      requestAnimationFrame(() => {
+        flyer.style.transform = 'rotate(-8deg) scale(1.12)';
+        flyer.style.left = (b.left + b.width/2 - 28) + 'px';
+        flyer.style.top = (b.top + b.height/2 - 30) + 'px';
+      });
+
+      setTimeout(() => {
+        const hammer = flyer.querySelector('.steal-hammer');
+        const text = flyer.querySelector('.bonk-text');
+        if (hammer) hammer.classList.add('bonk');
+        if (text) text.classList.add('show');
+        playSound('bonk');
+        victim.classList.remove('duck-bonk');
+        void victim.offsetWidth;
+        victim.classList.add('duck-bonk');
+      }, 780);
+
+      setTimeout(() => {
+        flyer.remove();
+        if (currentGameState) renderRace(currentGameState);
+        stealAnimating = false;
+      }, 1850);
+    }
+
     socket.on("buffApplied", x => {
-      qs("screenStatus").textContent = "✨ Buff đã được áp dụng. MC tự quyết định khi nào mở câu tiếp theo.";
+      if (Number(x.buffId) === 1 && x.targetGroup) {
+        animateSteal(x);
+        qs("screenWinner").textContent = `🔨 NHÓM ${x.group} CƯỚP ${x.amount} ĐIỂM CỦA NHÓM ${x.targetGroup}!`;
+        qs("screenStatus").textContent = `🦆 Vịt nhóm ${x.group} bay sang BONK vịt nhóm ${x.targetGroup}!`;
+      } else if (Number(x.buffId) === 3) {
+        showStoneHit(x);
+        qs("screenWinner").textContent = `🪨 NHÓM ${x.group} VẤP ĐÁ!`;
+        qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm và lùi 1 ô!";
+      } else {
+        qs("screenStatus").textContent = "✨ Buff đã được áp dụng. MC tự quyết định khi nào mở câu tiếp theo.";
+      }
     });
 
     socket.on("questionSkipped", () => {
