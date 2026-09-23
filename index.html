@@ -98,8 +98,8 @@ s.on("state", st => {
   currentState=st;
   const btn = document.getElementById("buzz");
   if (!st.questionOpen) {
-    btn.disabled = true;
-    status.textContent = "⏳ Đang chờ MC mở câu hỏi...";
+    btn.disabled = false;
+    status.textContent = "⏳ Đã vào chuông — đang chờ MC mở câu hỏi. Có thể bấm sẵn!";
     return;
   }
   const isLocked = st.lockedGroups && st.lockedGroups.includes(String(group));
