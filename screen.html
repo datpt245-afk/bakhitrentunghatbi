@@ -395,6 +395,8 @@
     .race-track.buff-focus > h2 { color:#fbbf24 !important; }
     #blindBoxArea { transition: all .25s ease; }
     #blindBoxArea.buff-active { padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,.10), rgba(168,85,247,.10), rgba(34,197,94,.08)); border:1px solid rgba(245,158,11,.35); }
+
+    .scoreboard, .score-board, .score-panel, .score-bar, .team-score-bar, #scoreboard, #scoreBoard { display:none !important; }
   </style>
 </head>
 <body>
@@ -422,7 +424,7 @@
       </ol>
       <div class="point-box">🎁 <strong>12/31 câu</strong> được hệ thống chọn ngẫu nhiên để có buff mỗi ván.</div>
       <div class="lobby-status">⏳ ĐANG CHỜ MC BẤM BẮT ĐẦU TRÒ CHƠI...</div>
-      <div><button class="activate-sound-btn" onclick="startGameMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button></div>
+      <div><button class="activate-sound-btn" onclick="startGameMusic();">🎵 Bấm vào đây để Bật Âm Thanh</button></div>
     </div>
   </div>
 
@@ -449,26 +451,22 @@
         🌊 BỂ BƠI THI ĐẤU TRỰC TIẾP
       </h2>
       <div id="blindBoxArea">
-      <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
-      <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
-      <div class="blind-grid">
-        <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">🎁</div><div class="label">HỘP 1</div></div>
-        <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">🎀</div><div class="label">HỘP 2</div></div>
-        <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
+        <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
+        <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
+        <div class="blind-grid">
+          <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">🎁</div><div class="label">HỘP 1</div></div>
+          <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">🎀</div><div class="label">HỘP 2</div></div>
+          <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
+        </div>
+        <div id="swapTargetPanel" class="swap-target-panel">
+          <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
+          <div id="swapTargetGrid" class="swap-target-grid"></div>
+        </div>
       </div>
-      <div id="swapTargetPanel" class="swap-target-panel">
-        <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
-        <div id="swapTargetGrid" class="swap-target-grid"></div>
-      </div>
-    </div>
 
-    <div id="screenRace"></div>
+      <div id="screenRace"></div>
     </div>
   </div>
-
-
-    /* Màn chiếu chỉ hiển thị điểm ngay trên từng chú vịt; không dùng bảng/thanh điểm riêng. */
-    .scoreboard, .score-board, .score-panel, .score-bar, .team-score-bar, #scoreboard, #scoreBoard { display:none !important; }
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -478,141 +476,49 @@
     let currentQuestionHasBuff = false;
 
     let soundEnabled = true;
-
-    // --- NHẠC NỀN GAME SÔI ĐỘNG ---
-    // Dùng Web Audio API để tạo một loop arcade/race tại chỗ, không còn nhạc lo-fi chill.
-    let audioCtx = null;
-    let gameMusicTimer = null;
-    let gameMusicStep = 0;
     let gameMusicRunning = false;
 
-    function initAudioContext() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
+    // --- QUẢN LÝ TẤT CẢ FILE ÂM THANH (.MP3) ---
+    // Đường dẫn trỏ tới thư mục /sounds/
+    const bgMusic = new Audio('/sounds/bgm.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.3; // Âm lượng nhạc nền 30%
 
-    function tone(freq, start, duration, type='sine', volume=0.18, endFreq=null) {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, start);
-      if (endFreq !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), start + duration);
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(start); osc.stop(start + duration + 0.02);
-    }
-
-    function noiseBurst(start, duration=0.12, volume=0.08) {
-      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i=0;i<data.length;i++) data[i] = Math.random()*2-1;
-      const src = audioCtx.createBufferSource();
-      const filter = audioCtx.createBiquadFilter();
-      const gain = audioCtx.createGain();
-      filter.type='bandpass'; filter.frequency.value=1800; filter.Q.value=1.2;
-      gain.gain.setValueAtTime(volume, start);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start+duration);
-      src.buffer=buffer; src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
-      src.start(start); src.stop(start+duration);
-    }
+    const audioEffects = {
+      buzz: new Audio('/sounds/buzz.mp3'),
+      correct: new Audio('/sounds/correct.mp3'),
+      wrong: new Audio('/sounds/wrong.mp3'),
+      steal: new Audio('/sounds/steal.mp3'),
+      box: new Audio('/sounds/box.mp3'),
+      buff1: new Audio('/sounds/buff1.mp3'),
+      buff2: new Audio('/sounds/buff2.mp3'),
+      buff3: new Audio('/sounds/buff3.mp3'),
+      buff4: new Audio('/sounds/buff4.mp3'),
+      buff5: new Audio('/sounds/buff5.mp3'),
+      buff6: new Audio('/sounds/buff6.mp3')
+    };
 
     function playSound(type) {
       if (!soundEnabled) return;
-      initAudioContext();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-
-      if (type === 'buzz') {
-        // Hồi hộp: chuông + hit ngắn
-        tone(880, now, 0.18, 'square', 0.22, 1180);
-        tone(1320, now+0.03, 0.55, 'sine', 0.16, 1050);
-        noiseBurst(now, 0.08, 0.06);
-      } else if (type === 'correct') {
-        // ĐÚNG: fanfare 5 nốt, sáng và dứt khoát
-        [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f, now+i*0.10, 0.30, 'triangle', 0.22));
-        tone(1046.5, now+0.46, 0.65, 'sine', 0.24);
-      } else if (type === 'wrong') {
-        // SAI: 3 hit giảm dần, tạo cảm giác hụt
-        tone(220, now, 0.22, 'sawtooth', 0.22, 150);
-        tone(165, now+0.18, 0.25, 'sawtooth', 0.18, 105);
-        tone(110, now+0.38, 0.38, 'sawtooth', 0.16, 70);
-      } else if (type === 'steal') {
-        // Nhường chuông: sweep + ding để kéo đội khác vào
-        tone(330, now, 0.18, 'square', 0.12, 660);
-        tone(660, now+0.18, 0.22, 'triangle', 0.18, 990);
-        tone(990, now+0.40, 0.50, 'sine', 0.20);
-      } else if (type === 'box') {
-        // Mở blind box: suspense tăng dần
-        [180,220,280,360,470,620].forEach((f,i)=>tone(f, now+i*0.09, 0.16, 'sine', 0.10));
-        noiseBurst(now+0.50, 0.12, 0.05);
-      } else if (type === 'buff1') {
-        // Cướp điểm: mischievous / jackpot
-        tone(392,now,.14,'square',.15,523); tone(523,now+.12,.14,'square',.15,659); tone(659,now+.24,.35,'triangle',.18,330);
-      } else if (type === 'buff2') {
-        // Nhân đôi: power-up tăng cao
-        [392,523,659,784,1046].forEach((f,i)=>tone(f,now+i*.08,.24,'triangle',.18));
-        tone(1046,now+.40,.55,'sine',.22);
-      } else if (type === 'buff3') {
-        // Vấp đá: comic fall
-        tone(520,now,.18,'square',.16,350); tone(350,now+.16,.20,'square',.14,210); tone(210,now+.34,.35,'sawtooth',.14,90);
-      } else if (type === 'buff4') {
-        // Hoán đổi: whoosh lên xuống
-        tone(180,now,.35,'sine',.13,900); tone(900,now+.28,.35,'sine',.13,180); tone(660,now+.55,.55,'triangle',.18);
-      } else if (type === 'buff5') {
-        // Tăng tốc: race boost
-        tone(220,now,.65,'sawtooth',.12,1400); tone(880,now+.20,.55,'triangle',.16,1760); tone(1760,now+.45,.55,'sine',.20);
-      } else if (type === 'buff6') {
-        // Cân bằng điểm: dramatic equalizer
-        tone(440,now,.25,'triangle',.15,330); tone(330,now+.20,.28,'triangle',.14,220); tone(220,now+.42,.80,'sawtooth',.18,55);
+      const sound = audioEffects[type];
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(err => console.warn(`Không thể phát âm thanh ${type}:`, err));
       }
-    }
-
-    function playGameMusicStep() {
-      if (!soundEnabled || !audioCtx) return;
-      const now = audioCtx.currentTime;
-      // 150 BPM / 16 bước: nhịp dồn như một cuộc đua arcade.
-      const step = gameMusicStep % 16;
-      const bass = [110,110,110,147,123,123,123,165,98,98,98,131,110,110,147,165][step];
-      const lead = [440,523,659,784,659,784,988,1175,392,494,587,784,440,659,784,1047][step];
-
-      // Bass ngắn + lead sáng để tạo cảm giác đang chạy.
-      tone(bass, now, 0.14, 'sawtooth', 0.075, bass * 0.82);
-      tone(lead, now, 0.10, 'square', 0.040);
-
-      // Kick 4/4 + snare/hi-hat ở nhịp phụ.
-      if (step % 4 === 0) {
-        tone(70, now, 0.11, 'sine', 0.18, 38);
-        noiseBurst(now + 0.01, 0.035, 0.025);
-      } else if (step % 2 === 0) {
-        noiseBurst(now, 0.055, 0.055);
-      }
-
-      // "Engine rev" ở cuối mỗi ô nhịp.
-      if (step === 15) tone(220, now, 0.18, 'sawtooth', 0.055, 520);
-      gameMusicStep++;
     }
 
     function startGameMusic() {
-      initAudioContext();
-      if (!soundEnabled || !audioCtx || gameMusicRunning) return;
-      gameMusicRunning = true;
-      gameMusicStep = 0;
-      playGameMusicStep();
-      gameMusicTimer = setInterval(playGameMusicStep, 100);
-      qs("audioToggleBtn").textContent = "🎵 Nhạc Game: ĐANG PHÁT";
+      if (!soundEnabled || gameMusicRunning) return;
+      bgMusic.play().then(() => {
+        gameMusicRunning = true;
+        qs("audioToggleBtn").textContent = "🎵 Nhạc Game: ĐANG PHÁT";
+      }).catch(err => {
+        console.warn("Chưa thể phát nhạc nền:", err);
+      });
     }
 
     function stopGameMusic() {
-      if (gameMusicTimer) {
-        clearInterval(gameMusicTimer);
-        gameMusicTimer = null;
-      }
+      bgMusic.pause();
       gameMusicRunning = false;
     }
 
@@ -632,12 +538,10 @@
       }
     }
 
-    // Không còn bộ đếm tự động: MC kiểm soát toàn bộ nhịp độ trò chơi.
     function start5SecTimer() { qs("timerDisplay").classList.remove("active"); }
     function stop5SecTimer() { qs("timerDisplay").classList.remove("active"); }
 
     window.addEventListener('click', () => { 
-      initAudioContext(); 
       startGameMusic(); 
     }, { once: true });
 
@@ -684,7 +588,6 @@
     });
 
     function setQuestionVisible(visible) {
-      // Màn chiếu luôn giữ câu hỏi + A/B/C/D + đường đua cùng lúc.
       const card = document.querySelector('.q-card');
       const race = document.querySelector('.race-track');
       if (card) card.classList.remove('temporarily-hidden');
@@ -710,13 +613,11 @@
       }).join("");
     }
 
-    // MC điều khiển trực tiếp trên màn hình chiếu. Người chơi chỉ trả lời bằng miệng.
     function selectScreenAnswer(index) {
       if (!currentGameState?.activeResponder || currentGameState?.pendingAnswer || currentGameState?.pendingBuff) return;
       socket.emit("mcSelectAnswer", { index });
     }
 
-    // Người chơi chỉ nói lựa chọn với MC; MC click hộp tương ứng trên màn hình chiếu.
     function selectBuffBox(choice) {
       if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.chosen) return;
       socket.emit("chooseBuff", { choice });
@@ -773,8 +674,6 @@
       let rawTeams = Array.isArray(x.teams) ? x.teams : Object.entries(x.teams).map(([k, v]) => ({ key: k, ...v }));
       const activeTeams = rawTeams;
 
-      // Vịt chỉ tiến về phía trước theo duckPos; không co giãn theo đội dẫn đầu
-      // để khi đội khác vượt lên, vị trí của vịt cũ không bị "lùi" trên màn chiếu.
       qs("screenRace").innerHTML = activeTeams.map(t => {
         const score = Number(t.score) || 0;
         const duckPos = Number(t.duckPos) || 0;
@@ -792,8 +691,7 @@
               <div class="water-ripple"></div>
               ${getDuckSVG(c.body, c.wing)}
             </div>
-
-                </div>
+          </div>
         `;
       }).join("");
     }
@@ -833,7 +731,6 @@
       startGameMusic();
     });
 
-    // --- CHUÔNG: chỉ giành quyền, không có đồng hồ ép trả lời ---
     socket.on("buzzed", x => {
       playSound('buzz');
       qs("screenWinner").textContent = `🚨 ${x.name.toUpperCase()} (NHÓM ${x.group}) GIÀNH QUYỀN TRẢ LỜI!`;
@@ -910,7 +807,6 @@
     });
 
     socket.on("buffRevealedMC", x => {
-      // Compatibility with older server payloads that may omit the box index.
       if (x && x.choice !== undefined) {
         const choice = Number(x.choice);
         qs("blindBoxArea").style.display = "block";
