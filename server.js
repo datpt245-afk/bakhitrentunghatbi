@@ -56,9 +56,9 @@ let game = {
   teams: {
     1: { name: "Nhóm 1", score: 0, correct: 0, duckPos: 0, members: {} },
     2: { name: "Nhóm 2", score: 0, correct: 0, duckPos: 0, members: {} },
-    3: { name: "Nhóm 3", score: 0, correct: 0, duckPos: 0, members: {} },
-    4: { name: "Nhóm 4", score: 0, correct: 0, duckPos: 0, members: {} },
-    5: { name: "Nhóm 5", score: 0, correct: 0, duckPos: 0, members: {} }
+    3: { name: "Nhóm 4", score: 0, correct: 0, duckPos: 0, members: {} },
+    4: { name: "Nhóm 5", score: 0, correct: 0, duckPos: 0, members: {} },
+    5: { name: "Nhóm 6", score: 0, correct: 0, duckPos: 0, members: {} }
   },
 
   questions: [],
