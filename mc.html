@@ -195,18 +195,19 @@
       state = x;
 
       // Đồng bộ đúng bộ 30 câu Đại hội VIII + IX vào Server.
-      // Không xáo trộn nội dung/đáp án; Server sẽ dùng thứ tự này cho trận đấu.
+      // Nếu Server đang rỗng, vẫn render ngay bộ 30 câu trên MC rồi đồng bộ lên Server.
       const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v1";
-      const savedVersion = localStorage.getItem("duck_race_question_bank_version");
-      if (!isAutoSynced && savedVersion !== QUESTION_BANK_VERSION) {
-        isAutoSynced = true;
-        localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
-        localStorage.setItem("duck_race_questions", JSON.stringify(defaultQuestions));
-        socket.emit("saveQuestions", defaultQuestions);
-      }
-
-      if (x.questions && x.questions.length > 0) {
+      if (!x.questions || x.questions.length === 0) {
+        x.questions = defaultQuestions.slice();
+        if (!isAutoSynced) {
+          isAutoSynced = true;
+          localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
+          localStorage.setItem("duck_race_questions", JSON.stringify(defaultQuestions));
+          socket.emit("saveQuestions", defaultQuestions);
+        }
+      } else {
         localStorage.setItem("duck_race_questions", JSON.stringify(x.questions));
+        localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
       }
 
       // Render Bảng điểm nhóm
@@ -382,6 +383,15 @@
     }
 
     // Socket.io Events
+    socket.on("questionsSaved", questions => {
+      if (Array.isArray(questions) && questions.length) {
+        if (state) state.questions = questions;
+        localStorage.setItem("duck_race_questions", JSON.stringify(questions));
+        localStorage.setItem("duck_race_question_bank_version", "dai-hoi-viii-ix-30-v1");
+        if (state) render(state);
+      }
+    });
+
     socket.on("state", render);
 
     socket.on("questionOpened", x => {
