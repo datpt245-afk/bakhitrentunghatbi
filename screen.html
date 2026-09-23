@@ -413,8 +413,9 @@
         <li><strong>Trả lời sai:</strong> Cả nhóm của người trả lời bị khóa ở câu đó. Sau <strong>3 giây</strong>, các nhóm còn lại được bấm chuông.</li>
         <li><strong>Trả lời đúng:</strong> Nhóm nhận <strong>+2 điểm</strong> và vịt tiến +2 ô.</li>
         <li><strong>Có buff:</strong> 12/30 câu có buff. Sau khi đúng, chọn 1 trong <strong>3 hộp bí ẩn</strong>; MC bấm hộp để mở buff.</li>
-        <li><strong>6 buff:</strong> 🥷 Cướp 2 điểm · ✖️ Nhân đôi điểm · 🪨 Vấp đá -1· 🔄 Hoán đổi điểm · ⚡ Tăng tốc +3 · ⚖️ Cân bằng điểm với nhóm thấp nhất.</li>
-       
+        <li><strong>6 buff:</strong> 🥷 Cướp 2 điểm · ✖️ Nhân đôi điểm · 🪨 Vấp đá · 🔄 Hoán đổi điểm · ⚡ Tăng tốc +3 · ⚖️ Cân bằng điểm.</li>
+        <li><strong>Điểm & vịt:</strong> Mọi thay đổi điểm đều làm vịt tiến/lùi tương ứng. Hoán đổi điểm cũng hoán đổi vị trí vịt.</li>
+        <li><strong>Chuyển câu:</strong> MC có thể <strong>chuyển sang câu bất kỳ lúc nào</strong>; không tự động chuyển câu.</li>
         <li><strong>Kết thúc:</strong> Hết 30 câu, nhóm có vịt đi xa nhất thắng. Nếu bằng vị trí, xét <strong>điểm cao hơn</strong>. Không có vạch đích.</li>
       </ol>
 
@@ -455,7 +456,7 @@
         <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
       </div>
       <div id="swapTargetPanel" class="swap-target-panel">
-        <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
+        <div id="swapTargetTitle" class="swap-target-title">🎯 CHỌN NHÓM</div>
         <div id="swapTargetGrid" class="swap-target-grid"></div>
       </div>
     </div>
@@ -715,17 +716,25 @@
       socket.emit("chooseBuff", { choice });
     }
 
-    function selectSwapTarget(group) {
-      if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.buffId !== 4 || !currentGameState.pendingBuff.chosen) return;
-      socket.emit("chooseSwapTarget", { targetGroup: String(group) });
-      qs("swapTargetPanel").style.display = "none";
+    function selectBuffTarget(group) {
+      const p = currentGameState?.pendingBuff;
+      if (!p || !p.chosen || ![1,4].includes(Number(p.buffId))) return;
+      if (String(group) === String(p.group)) return;
+      if (Number(p.buffId) === 1 && (Number(currentGameState.teams?.[group]?.score) || 0) <= 0) return;
+      socket.emit("chooseBuffTarget", { targetGroup: String(group) });
+      document.querySelectorAll(".swap-target-btn").forEach(b => b.disabled = true);
     }
 
-    function showSwapTargets(sourceGroup) {
+    function showBuffTargets(sourceGroup, buffId, targetGroups) {
       const grid = qs("swapTargetGrid");
-      grid.innerHTML = Object.keys(currentGameState.teams).filter(g => String(g) !== String(sourceGroup)).map(g => {
-        const t = currentGameState.teams[g];
-        return `<button class="swap-target-btn" onclick="selectSwapTarget('${g}')">NHÓM ${g}<br>${Number(t.score)||0} điểm</button>`;
+      const isSteal = Number(buffId) === 1;
+      qs("swapTargetTitle").textContent = isSteal
+        ? `🥷 NHÓM ${sourceGroup}: CHỌN NHÓM ĐỂ CƯỚP 2 ĐIỂM`
+        : `🔄 NHÓM ${sourceGroup}: CHỌN NHÓM ĐỂ HOÁN ĐỔI`;
+      grid.innerHTML = (targetGroups || []).filter(g => String(g) !== String(sourceGroup)).map(g => {
+        const score = Number(currentGameState?.teams?.[g]?.score) || 0;
+        const disabled = isSteal && score <= 0 ? "disabled" : "";
+        return `<button class="swap-target-btn" ${disabled} onclick="selectBuffTarget('${g}')">NHÓM ${g}${isSteal ? `<br>${score} điểm` : ""}</button>`;
       }).join("");
       qs("swapTargetPanel").style.display = "block";
     }
@@ -899,7 +908,7 @@
       }
       qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
       qs("screenStatus").textContent = x.buff.desc;
-      if (Number(x.buffId) === 4) showSwapTargets(x.group);
+      if ([1,4].includes(Number(x.buffId))) showBuffTargets(x.group, x.buffId, Object.keys(currentGameState?.teams || {}).filter(g => String(g) !== String(x.group)));
     });
 
     socket.on("buffRevealedMC", x => {
@@ -913,11 +922,23 @@
         }
         qs("screenWinner").textContent = `🎁 HỘP ${choice+1}: ${x.buff.name}`;
         qs("screenStatus").textContent = x.buff.desc;
-        if (Number(x.buffId) === 4) showSwapTargets(x.group);
+        if ([1,4].includes(Number(x.buffId))) showBuffTargets(x.group, x.buffId, Object.keys(currentGameState?.teams || {}).filter(g => String(g) !== String(x.group)));
       }
     });
 
+    socket.on("buffTargetSelection", x => {
+      setQuestionVisible(true);
+      qs("blindBoxArea").classList.add("buff-active");
+      qs("blindBoxArea").style.display = "block";
+      showBuffTargets(x.group, x.buffId, x.targetGroups);
+      qs("screenWinner").textContent = Number(x.buffId) === 1
+        ? `🥷 NHÓM ${x.group}: CHỌN NHÓM ĐỂ CƯỚP`
+        : `🔄 NHÓM ${x.group}: CHỌN NHÓM ĐỂ HOÁN ĐỔI`;
+      qs("screenStatus").textContent = "Người chơi nói mục tiêu — MC click nhóm tương ứng trên màn hình.";
+    });
+
     socket.on("buffApplied", x => {
+      qs("swapTargetPanel").style.display = "none";
       if (Number(x.buffId) === 1) {
         showStealHit(x);
         qs("screenWinner").textContent = `🔨 NHÓM ${x.group} CƯỚP 2 ĐIỂM TỪ NHÓM ${x.targetGroup || "không có mục tiêu"}!`;
@@ -927,9 +948,8 @@
         qs("screenWinner").textContent = `🪨 NHÓM ${x.group} VẤP ĐÁ!`;
         qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm và lùi 1 ô!";
       } else if (Number(x.buffId) === 4) {
-        qs("swapTargetPanel").style.display = "none";
         qs("screenWinner").textContent = `🔄 NHÓM ${x.group} ↔ NHÓM ${x.targetGroup}`;
-        qs("screenStatus").textContent = "Điểm của hai nhóm đã được hoán đổi.";
+        qs("screenStatus").textContent = "Điểm và vị trí của hai nhóm đã được hoán đổi.";
       } else if (Number(x.buffId) === 5) {
         qs("screenWinner").textContent = `⚡ NHÓM ${x.group} TĂNG TỐC +3!`;
         qs("screenStatus").textContent = `🦆 Vịt tiến 3 ô và nhận thêm ${x.scoreAdded ?? 3} điểm!`;
