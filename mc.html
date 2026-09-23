@@ -149,156 +149,36 @@
 
     // BỘ CÂU HỎI GAME 1 ĐÃ ĐƯỢC XÁO TRỘN VỊ TRÍ ĐÁP ÁN ĐÚNG NGẪU NHIÊN NẰM Ở A, B, C, D
     const defaultQuestions = [
-      {
-        q: "Sự kiện diễn ra từ 1929 – 1933 bắt đầu ở các nước TBCN, ảnh hưởng lớn đến các nước thuộc địa và phụ thuộc, làm cho mọi hoạt động sản xuất đình đốn. Đó là sự kiện gì?",
-        options: ["Chiến tranh thế giới thứ hai bùng nổ (1939 – 1945)", "Khủng hoảng kinh tế thế giới (1929 – 1933)", "Khủng hoảng năng lượng thế giới (1973)", "Phong trào Cách mạng thế giới suy thoái (1918 – 1923)"],
-        answer: 1
-      },
-      {
-        q: "Cuộc khủng hoảng kinh tế thế giới 1929 – 1933 bắt đầu bùng nổ đầu tiên ở quốc gia nào?",
-        options: ["Anh", "Pháp", "Nước Mỹ", "Đức"],
-        answer: 2
-      },
-      {
-        q: "Giai đoạn 1929 - 1933, sự kiện nào đã gây ảnh hưởng đến các nước thuộc địa và phụ thuộc, làm cho mọi hoạt động sản xuất đình đốn?",
-        options: ["Chiến tranh thế giới thứ nhất kết thúc", "Khủng hoảng tài chính châu Á", "Phong trào Bãi công của giai cấp công nhân quốc tế", "Khủng hoảng kinh tế thế giới"],
-        answer: 3
-      },
-      {
-        q: "Điền vào chỗ trống: '.... ra đời với hệ thống tổ chức thống nhất và cương lĩnh chính trị đúng đắn, nắm quyền lãnh đạo duy nhất đối với cách mạng Việt Nam'.",
-        options: ["Hội Việt Nam Cách mạng Thanh niên", "Đảng Cộng sản Việt Nam", "Mặt trận Việt Minh", "Việt Nam Quốc Dân Đảng"],
-        answer: 1
-      },
-      {
-        q: "Đảng Cộng sản Việt Nam được thành lập vào thời gian nào và tại đâu?",
-        options: ["Từ ngày 03/02/1930, tại Cao Bằng (Việt Nam)", "Từ ngày 01/05/1930, tại Quảng Châu (Trung Quốc)", "Từ ngày 03/02/1930, tại Cửu Long (Hương Cảng, Trung Quốc)", "Từ ngày 26/03/1931, tại Hà Nội (Việt Nam)"],
-        answer: 2
-      },
-      {
-        q: "Ai là người chủ trì Hội nghị hợp nhất các tổ chức cộng sản để thành lập Đảng Cộng sản Việt Nam đầu năm 1930?",
-        options: ["Nguyễn Ái Quốc", "Trần Phú", "Lê Hồng Phong", "Ngô Gia Tự"],
-        answer: 0
-      },
-      {
-        q: "Từ ngày 14 đến ngày 31/10/1930, tại Hương Cảng (Trung Quốc), sự kiện gì đã diễn ra?",
-        options: ["Hội nghị hợp nhất các tổ chức cộng sản thành lập Đảng", "Ban Chấp hành Trung ương họp Hội nghị lần thứ nhất", "Đại hội đại biểu toàn quốc lần thứ nhất của Đảng", "Hội nghị thành lập Mặt trận Dân tộc Thống nhất"],
-        answer: 1
-      },
-      {
-        q: "Ai là người chủ trì Hội nghị Ban Chấp hành Trung ương Đảng tháng 10/1930 tại Hương Cảng?",
-        options: ["Nguyễn Ái Quốc", "Hà Huy Tập", "Trần Phú", "Nguyễn Văn Cừ"],
-        answer: 2
-      },
-      {
-        q: "Tại Hội nghị Trung ương tháng 10/1930, ai đã được bầu làm Tổng Bí thư đầu tiên của Đảng?",
-        options: ["Lê Hồng Phong", "Nguyễn Văn Cừ", "Trường Chinh", "Trần Phú"],
-        answer: 3
-      },
-      {
-        q: "Hội nghị Trung ương tháng 10/1930, Đảng Cộng sản Việt Nam đổi tên thành gì?",
-        options: ["Đông Dương Cộng sản Đảng", "Đảng Cộng sản Đông Dương", "An Nam Cộng sản Đảng", "Đảng Lao động Việt Nam"],
-        answer: 1
-      },
-      {
-        q: "Đảng Cộng sản Việt Nam đổi tên thành Đảng Cộng sản Đông Dương vào thời gian nào?",
-        options: ["Tháng 02/1930", "Tháng 03/1935", "Tháng 10/1930", "Tháng 05/1941"],
-        answer: 2
-      },
-      {
-        q: "Hội nghị Trung ương tháng 10/1930 đã thông qua văn kiện quan trọng gì?",
-        options: ["Luận cương Chính trị của Đảng Cộng sản Đông Dương", "Chánh cương tắt, Sách lược tắt của Đảng", "Tuyên ngôn độc lập của nước Việt Nam Dân chủ Cộng hòa", "Đề cương về văn hóa Việt Nam"],
-        answer: 0
-      },
-      {
-        q: "Luận cương Chính trị tháng 10/1930 do ai khởi thảo?",
-        options: ["Nguyễn Ái Quốc", "Trần Phú", "Lê Hồng Phong", "Ngô Gia Tự"],
-        answer: 1
-      },
-      {
-        q: "Luận cương Chính trị của Đảng Cộng sản Đông Dương được thông qua vào thời gian nào?",
-        options: ["Tháng 02/1930", "Tháng 03/1935", "Tháng 05/1941", "Tháng 10/1930"],
-        answer: 3
-      },
-      {
-        q: "Dự thảo Luận cương chính trị tháng 10/1930 được đồng chí Trần Phú viết ở đâu?",
-        options: ["Nhà số 90 phố Thợ Nhuộm, Hà Nội", "Pắc Bó, Cao Bằng", "Tân Trào, Tuyên Quang", "Nhà số 48 phố Hàng Ngang, Hà Nội"],
-        answer: 0
-      },
-      {
-        q: "Tại ngôi nhà số 90 phố Thợ Nhuộm (Hà Nội), ai là người đã viết nên Luận cương chính trị tháng 10/1930?",
-        options: ["Nguyễn Ái Quốc", "Lê Hồng Phong", "Trần Phú", "Trường Chinh"],
-        answer: 2
-      },
-      {
-        q: "Hiện nay, ngôi nhà số 90 phố Thợ Nhuộm (Hà Nội) đang được xếp hạng là loại di tích gì?",
-        options: ["Di tích lịch sử cấp Tỉnh/Thành phố", "Di tích lịch sử quốc gia", "Di tích kiến trúc nghệ thuật cấp Quốc gia", "Danh lam thắng cảnh cấp Quốc gia"],
-        answer: 1
-      },
-      {
-        q: "Luận cương tháng 10/1930 nhấn mạnh nhiệm vụ gì?",
-        options: ["Phản đế", "Giải phóng dân tộc", "Cả phản phong và phản đế", "Phản phong"],
-        answer: 3
-      },
-      {
-        q: "Khẩu hiệu chiến lược của Luận cương tháng 10/1930 trong việc giải quyết vấn đề ruộng đất là gì?",
-        options: ["'Tăng gia sản xuất, giảm tức giảm phụ'", "'Người cày có ruộng'", "'Tấc đất tấc vàng, ruộng đất về tay nông dân'", "'Tịch thu ruộng đất của thực dân chia cho dân nghèo'"],
-        answer: 1
-      },
-      {
-        q: "Hạn chế lớn nhất của Luận cương chính trị tháng 10/1930 khi xác định nhiệm vụ cách mạng là gì?",
-        options: ["Không đánh giá đúng khả năng cách mạng của giai cấp công nhân và nông dân", "Coi trọng vai trò của tư sản dân tộc và tiểu tư sản hơn giai cấp vô sản", "Chưa đặt nhiệm vụ giải phóng dân tộc lên hàng đầu mà quá nặng về đấu tranh giai cấp và cách mạng ruộng đất", "Chưa xác định được phương pháp đấu tranh vũ trang để giành chính quyền"],
-        answer: 2
-      },
-      {
-        q: "Luận cương T10/1930, lực lượng cách mạng được tập hợp chủ yếu là ai?",
-        options: ["Công nhân, nông dân và tư sản dân tộc", "Công nhân và nông dân", "Công nhân, nông dân và tiểu tư sản", "Tất cả các tầng lớp, giai cấp yêu nước"],
-        answer: 1
-      },
-      {
-        q: "Đỉnh cao của phong trào cách mạng 1930 - 1931 là gì? Điền vào chỗ trống câu nói của Bác Hồ: '.... bị thất bại, nhưng đã có ảnh hưởng lớn. Tinh thần anh dũng của nó luôn luôn nồng nặc trong tâm hồn quần chúng, và nó đã mở đường cho thắng lợi về sau'.",
-        options: ["Khởi nghĩa Nam Kỳ", "Khởi nghĩa Bắc Sơn", "Xô viết Nghệ - Tĩnh", "Bãi công Bến Thủy"],
-        answer: 2
-      },
-      {
-        q: "Chính quyền Xô viết Nghệ - Tĩnh nở rộ và đạt đỉnh cao tại thời điểm nào?",
-        options: ["Tháng 09/1930", "Tháng 02/1930", "Tháng 05/1930", "Tháng 11/1930"],
-        answer: 0
-      },
-      {
-        q: "Chính quyền Xô viết Nghệ - Tĩnh là chính quyền của những giai cấp nào?",
-        options: ["Chính quyền tư sản và tiểu tư sản, đại diện cho liên minh trí thức - thương nhân", "Chính quyền liên hiệp gồm công nhân, nông dân, địa chủ và tư sản dân tộc", "Chính quyền công - nông, là chính quyền cách mạng của quần chúng lao động do Đảng lãnh đạo", "Chính quyền quân quản do các lực lượng vũ trang nhân dân nắm giữ toàn bộ thẩm quyền"],
-        answer: 2
-      },
-      {
-        q: "Cuộc biểu tình của nông dân Hưng Nguyên bị đàn áp dữ dội, máy bay Pháp ném bom giết chết 171 người diễn ra vào ngày tháng năm nào?",
-        options: ["Ngày 01/05/1930", "Ngày 12/09/1930", "Ngày 20/10/1930", "Ngày 22/12/1930"],
-        answer: 1
-      },
-      {
-        q: "Ngày 12/9 hằng năm hiện nay được chọn làm ngày kỷ niệm gì của tỉnh Nghệ An?",
-        options: ["Ngày Xô viết Nghệ - Tĩnh", "Ngày thành lập Đảng bộ tỉnh Nghệ An", "Ngày hội Văn hóa làng Sen", "Ngày giải phóng tỉnh Nghệ An"],
-        answer: 0
-      },
-      {
-        q: "Ngày 12/09/1930, máy bay Pháp ném bom giết chết bao nhiêu người trong cuộc biểu tình của nông dân Hưng Nguyên?",
-        options: ["717 người", "117 người", "171 người", "177 người"],
-        answer: 2
-      },
-      {
-        q: "Ngày 18/11/1930, tổ chức tập hợp lực lượng cách mạng được Đảng chủ trương thành lập là tổ chức gì?",
-        options: ["Mặt trận Dân chủ Đông Dương", "Mặt trận Việt Minh", "Hội Liên hiệp Quốc dân Việt Nam", "Hội phản đế đồng minh"],
-        answer: 3
-      },
-      {
-        q: "Ngày 18/11 hằng năm hiện nay được Ủy ban Trung ương Mặt trận Tổ quốc Việt Nam chọn làm ngày truyền thống gì?",
-        options: ["Ngày thành lập Hội Liên hiệp Phụ nữ Việt Nam", "Ngày thành lập Mặt trận Dân tộc Thống nhất Việt Nam", "Ngày truyền thống Công nhân Việt Nam", "Ngày thành lập Đoàn Thanh niên Cộng sản Hồ Chí Minh"],
-        answer: 1
-      },
-      {
-        q: "Hội phản đế đồng minh được thành lập vào thời gian nào?",
-        options: ["Ngày 18/11/1930", "Ngày 03/02/1930", "Ngày 26/03/1931", "Ngày 19/05/1941"],
-        answer: 0
-      }
+      { q: "Đại hội VIII được tổ chức công khai trong thời gian nào?", options: ["22/6 – 26/6/1996", "22/6 – 1/7/1996", "28/6 – 1/7/1996", "26/6 – 1/7/1996"], answer: 2 },
+      { q: "Đại hội VIII có 1.198 đại biểu, đại diện cho khoảng bao nhiêu đảng viên trong cả nước?", options: ["1,98 triệu", "2,03 triệu", "2,13 triệu", "2,30 triệu"], answer: 2 },
+      { q: "Ai đọc Diễn văn khai mạc Đại hội VIII?", options: ["Đỗ Mười", "Lê Đức Anh", "Võ Văn Kiệt", "Phạm Văn Đồng"], answer: 1 },
+      { q: "Ai trình bày Báo cáo của Ban Chấp hành Trung ương khóa VII về các văn kiện trình Đại hội VIII?", options: ["Lê Đức Anh", "Võ Văn Kiệt", "Đỗ Mười", "Nguyễn Văn Linh"], answer: 2 },
+      { q: "Đại hội VIII tổng kết bao nhiêu năm thực hiện đường lối đổi mới?", options: ["5 năm", "8 năm", "10 năm", "15 năm"], answer: 2 },
+      { q: "Nội dung nào dưới đây phản ánh đúng nhiệm vụ của Đại hội VIII?", options: ["Tổng kết 5 năm đổi mới và đề ra đường lối đổi mới", "Kiểm điểm 5 năm thực hiện Nghị quyết Đại hội VII và tổng kết 10 năm đổi mới", "Tổng kết 10 năm thực hiện Nghị quyết Đại hội VII", "Tổng kết 20 năm đổi mới và đề ra mục tiêu đến năm 2030"], answer: 1 },
+      { q: "Đại hội VIII đánh dấu bước chuyển đất nước sang:", options: ["Thời kỳ bắt đầu công cuộc đổi mới", "Thời kỳ đẩy mạnh công nghiệp hóa, hiện đại hóa", "Thời kỳ hoàn thành công nghiệp hóa, hiện đại hóa", "Thời kỳ hội nhập quốc tế toàn diện"], answer: 1 },
+      { q: "Theo Đại hội VIII, nhiệm vụ trung tâm của thời kỳ mới là:", options: ["Đẩy mạnh phát triển kinh tế đối ngoại", "Đẩy mạnh công nghiệp hóa, hiện đại hóa đất nước", "Hoàn thành hiện đại hóa nông nghiệp", "Tập trung xây dựng hệ thống chính trị"], answer: 1 },
+      { q: "Theo tổng kết 10 năm đổi mới của Đại hội VIII, nội dung nào sau đây đúng?", options: ["Lấy đổi mới chính trị làm trọng tâm, đổi mới kinh tế từng bước", "Kết hợp đổi mới kinh tế với đổi mới chính trị, lấy đổi mới kinh tế làm trọng tâm", "Tách biệt đổi mới kinh tế với đổi mới chính trị", "Lấy đổi mới văn hóa làm trọng tâm, đổi mới kinh tế sau"], answer: 1 },
+      { q: "Theo Đại hội VIII, khoa học và công nghệ được xác định là:", options: ["Điều kiện hỗ trợ công nghiệp hóa, hiện đại hóa", "Công cụ chủ yếu của công nghiệp hóa, hiện đại hóa", "Động lực của công nghiệp hóa, hiện đại hóa", "Kết quả của công nghiệp hóa, hiện đại hóa"], answer: 2 },
+      { q: "Một dự án đầu tư có quy mô rất lớn nhưng hiệu quả kinh tế – xã hội thấp. Theo quan điểm của Đại hội VIII, tiêu chí nào cần được coi là tiêu chuẩn cơ bản khi lựa chọn dự án?", options: ["Quy mô vốn đầu tư", "Quy mô công trình", "Hiệu quả kinh tế – xã hội", "Số lượng công nghệ được sử dụng"], answer: 2 },
+      { q: "Theo Đại hội VIII, từ nay đến năm 2020 phấn đấu đưa Việt Nam:", options: ["Trở thành nước công nghiệp", "Cơ bản trở thành một nước công nghiệp", "Trở thành nước phát triển", "Hoàn thành công nghiệp hóa, hiện đại hóa"], answer: 1 },
+      { q: "Phương án nào liệt kê đúng 4 văn kiện quan trọng được Đại hội VIII thảo luận và thông qua?", options: ["Báo cáo Chính trị; Chiến lược phát triển kinh tế – xã hội; Điều lệ Đảng; Nghị quyết Đại hội", "Báo cáo Chính trị; Phương hướng, nhiệm vụ kế hoạch phát triển kinh tế – xã hội 5 năm 1996–2000; Điều lệ Đảng; Nghị quyết Đại hội", "Báo cáo Chính trị; Báo cáo kiểm điểm BCH Trung ương; Điều lệ Đảng; Nghị quyết Đại hội", "Báo cáo Chính trị; Chiến lược phát triển kinh tế – xã hội; Báo cáo đối ngoại; Điều lệ Đảng"], answer: 1 },
+      { q: "Ai được bầu làm Tổng Bí thư tại Đại hội VIII?", options: ["Lê Đức Anh", "Đỗ Mười", "Lê Khả Phiêu", "Võ Văn Kiệt"], answer: 1 },
+      { q: "Phương án nào sau đây hoàn toàn chính xác về Đại hội VIII?", options: ["Đại hội diễn ra công khai 28/6–1/7/1996; có 1.198 đại biểu; bầu 170 ủy viên Trung ương; Đỗ Mười làm Tổng Bí thư; xác định đẩy mạnh công nghiệp hóa, hiện đại hóa là nhiệm vụ trung tâm.", "Đại hội diễn ra 22/6–1/7/1996; có 1.198 đại biểu; bầu 170 ủy viên Trung ương; Lê Khả Phiêu làm Tổng Bí thư; xác định đẩy mạnh công nghiệp hóa, hiện đại hóa là nhiệm vụ trung tâm.", "Đại hội diễn ra công khai 28/6–1/7/1996; có 1.198 đại biểu; bầu 160 ủy viên Trung ương; Đỗ Mười làm Tổng Bí thư; xác định hiện đại hóa là nhiệm vụ trung tâm.", "Đại hội diễn ra công khai 28/6–1/7/1996; có 1.298 đại biểu; bầu 170 ủy viên Trung ương; Đỗ Mười làm Tổng Bí thư; xác định phát triển kinh tế đối ngoại là nhiệm vụ trung tâm."], answer: 0 },
+      { q: "Đại hội đại biểu toàn quốc lần thứ IX của Đảng diễn ra trong khoảng thời gian nào?", options: ["19–22/4/2001", "18–22/4/2001", "19–23/4/2001", "20–22/4/2001"], answer: 0 },
+      { q: "Nội dung nào phản ánh đầy đủ nhất chủ đề của Đại hội IX?", options: ["Phát huy sức mạnh toàn dân tộc, tiếp tục đổi mới, đẩy mạnh công nghiệp hóa, hiện đại hóa, xây dựng và bảo vệ Tổ quốc Việt Nam xã hội chủ nghĩa.", "Phát huy sức mạnh đại đoàn kết toàn dân, đổi mới toàn diện, đẩy mạnh công nghiệp hóa, hiện đại hóa và hội nhập quốc tế.", "Tiếp tục đổi mới, phát triển kinh tế thị trường, đẩy mạnh công nghiệp hóa, hiện đại hóa và bảo vệ Tổ quốc.", "Phát huy nội lực, chủ động hội nhập, công nghiệp hóa, hiện đại hóa và xây dựng Nhà nước pháp quyền xã hội chủ nghĩa"], answer: 0 },
+      { q: "Một trong những điểm quan trọng về tư duy kinh tế được Đại hội IX xác định là:", options: ["Tiếp tục duy trì cơ chế kế hoạch hóa tập trung nhưng có điều chỉnh.", "Xây dựng nền kinh tế thị trường tự do, giảm vai trò quản lý của Nhà nước.", "Phát triển nền kinh tế thị trường định hướng xã hội chủ nghĩa.", "Chuyển hoàn toàn sang nền kinh tế tư nhân để thúc đẩy tăng trưởng."], answer: 2 },
+      { q: "Theo Đại hội IX, nhiệm vụ trung tâm của thời kỳ đẩy mạnh công nghiệp hóa, hiện đại hóa là:", options: ["Xây dựng và chỉnh đốn Đảng.", "Công nghiệp hóa, hiện đại hóa đất nước.", "Cải cách hành chính và tư pháp.", "Chủ động hội nhập kinh tế quốc tế."], answer: 1 },
+      { q: "Đại hội IX xác định xây dựng và chỉnh đốn Đảng là:", options: ["Nhiệm vụ trung tâm.", "Nhiệm vụ thường xuyên nhưng không phải trọng tâm.", "Nhiệm vụ then chốt.", "Nhiệm vụ chủ yếu trong lĩnh vực chính trị."], answer: 2 },
+      { q: "Đại hội IX xác định mục tiêu tạo nền tảng để đến năm nào Việt Nam cơ bản trở thành nước công nghiệp theo hướng hiện đại?", options: ["2010", "2015", "2020", "2025"], answer: 2 },
+      { q: "Theo Chiến lược phát triển kinh tế – xã hội 2001–2010, đến năm 2010 GDP phấn đấu:", options: ["Tăng ít nhất gấp đôi năm 2000.", "Tăng khoảng 1,5 lần năm 2000.", "Tăng gấp đôi so với năm 1991.", "Tăng ít nhất gấp ba năm 2000."], answer: 0 },
+      { q: "Mức tăng trưởng GDP bình quân được đề ra cho giai đoạn 2001–2005 là khoảng:", options: ["6,5%/năm.", "7%/năm.", "7,5%/năm.", "8,5%/năm."], answer: 2 },
+      { q: "Phát biểu nào dưới đây phù hợp nhất với quan điểm đối ngoại của Đại hội IX?", options: ["Độc lập, tự chủ, rộng mở, đa phương hóa, đa dạng hóa quan hệ quốc tế.", "Độc lập, tự chủ, ưu tiên quan hệ với các nước láng giềng và hạn chế các quan hệ khác.", "Mở rộng hội nhập kinh tế nhưng hạn chế đa phương hóa quan hệ chính trị.", "Tăng cường hợp tác quốc tế trên cơ sở ưu tiên nguồn lực bên ngoài."], answer: 0 },
+      { q: "Câu nói “Việt Nam sẵn sàng là bạn, là đối tác tin cậy...” thể hiện rõ nhất chủ trương nào sau đây?", options: ["Chỉ ưu tiên quan hệ với các nước phát triển.", "Đa phương hóa, đa dạng hóa quan hệ quốc tế.", "Hội nhập quốc tế hoàn toàn và không có điều kiện.", "Tập trung quan hệ kinh tế, hạn chế quan hệ chính trị."], answer: 1 },
+      { q: "Một địa phương đồng thời khuyến khích kinh tế tư nhân, củng cố kinh tế nhà nước và thu hút đầu tư nước ngoài. Chính sách này phù hợp nhất với quan điểm nào của Đại hội IX?", options: ["Phát triển kinh tế nhà nước giữ vai trò duy nhất.", "Phát triển nền kinh tế nhiều thành phần.", "Chuyển dần sang nền kinh tế tư nhân.", "Giảm vai trò của các thành phần kinh tế ngoài nhà nước."], answer: 1 },
+      { q: "Một doanh nghiệp Việt Nam mở rộng hợp tác với doanh nghiệp nước ngoài nhưng đồng thời chú trọng phát huy nguồn lực trong nước. Điều này phù hợp nhất với bài học nào của Đại hội IX?", options: ["Chỉ dựa vào nội lực để bảo đảm độc lập, tự chủ.", "Kết hợp sức mạnh dân tộc với sức mạnh thời đại.", "Ưu tiên nguồn lực bên ngoài để thúc đẩy tăng trưởng.", "Hạn chế hội nhập để bảo vệ thị trường trong nước."], answer: 1 },
+      { q: "Theo Đại hội IX, khoa học – công nghệ được xác định là:", options: ["Công cụ hỗ trợ cho quá trình công nghiệp hóa, hiện đại hóa.", "Một trong những điều kiện của phát triển kinh tế – xã hội.", "Nền tảng và động lực của công nghiệp hóa, hiện đại hóa.", "Yếu tố chủ yếu phục vụ phát triển công nghiệp nặng."], answer: 2 },
+      { q: "Phát biểu nào sau đây SAI về Đại hội IX?", options: ["Đại hội tổng kết 15 năm thực hiện công cuộc đổi mới.", "Đại hội thông qua Chiến lược phát triển kinh tế – xã hội 2001–2010.", "Đại hội xác định kinh tế thị trường định hướng xã hội chủ nghĩa.", "Đại hội đặt mục tiêu hoàn thành cơ bản công nghiệp hóa, hiện đại hóa ngay trong năm 2010."], answer: 3 },
+      { q: "Nội dung nào sau đây thể hiện đầy đủ nhất định hướng phát triển của Đại hội IX?", options: ["Tăng trưởng kinh tế nhanh, ưu tiên phát triển công nghiệp và mở rộng thị trường quốc tế.", "Đẩy mạnh công nghiệp hóa, hiện đại hóa gắn với phát triển kinh tế, văn hóa, xã hội, bảo vệ Tổ quốc và xây dựng Đảng.", "Tập trung phát triển kinh tế thị trường và từng bước giảm vai trò quản lý của Nhà nước.", "Ưu tiên hội nhập kinh tế quốc tế, sau đó mới giải quyết các vấn đề xã hội."], answer: 1 }
     ];
 
     // Thuật toán xáo trộn mảng ngẫu nhiên (Fisher-Yates)
@@ -314,12 +194,15 @@
     function render(x) {
       state = x;
 
-      // Nếu hệ thống chưa có câu hỏi trên Server, xáo trộn câu hỏi Game 1 và đồng bộ lên Server
-      if (!isAutoSynced && (!x.questions || x.questions.length === 0)) {
-        let listToSync = shuffleArray(defaultQuestions);
+      // Đồng bộ đúng bộ 30 câu Đại hội VIII + IX vào Server.
+      // Không xáo trộn nội dung/đáp án; Server sẽ dùng thứ tự này cho trận đấu.
+      const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v1";
+      const savedVersion = localStorage.getItem("duck_race_question_bank_version");
+      if (!isAutoSynced && savedVersion !== QUESTION_BANK_VERSION) {
         isAutoSynced = true;
-        localStorage.setItem("duck_race_questions", JSON.stringify(listToSync));
-        socket.emit("saveQuestions", listToSync);
+        localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
+        localStorage.setItem("duck_race_questions", JSON.stringify(defaultQuestions));
+        socket.emit("saveQuestions", defaultQuestions);
       }
 
       if (x.questions && x.questions.length > 0) {
@@ -374,7 +257,7 @@
       }).join("");
 
       // Render Link kết nối 5 nhóm
-      qs("links").innerHTML = [1, 2, 3, 4, 5].map(i => 
+      qs("links").innerHTML = [1, 2, 4, 5, 6].map(i => 
         `<p style="margin: 6px 0; font-size: 13px;">🔔 <b>Nhóm ${i}:</b> <code>${location.origin}/?group=${i}</code></p>`
       ).join("");
 
