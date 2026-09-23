@@ -191,48 +191,26 @@
       return shuffled;
     }
 
-    // Xáo vị trí đáp án đúng nhưng giữ nguyên nội dung 4 đáp án.
-    // Quy tắc: không để 3 câu liên tiếp có đáp án đúng cùng một vị trí.
-    function randomizeAnswerPositions(questions) {
-      return questions.map((q, i) => {
-        const correctText = q.options[q.answer];
-        const wrongOptions = q.options.filter((_, idx) => idx !== q.answer);
-        const positions = [0, 1, 2, 3];
-
-        // Chọn vị trí mới, tránh trùng vị trí của 2 câu ngay trước đó.
-        const previous = i >= 1 ? questions[i - 1].__newAnswer : -1;
-        const previous2 = i >= 2 ? questions[i - 2].__newAnswer : -1;
-        let allowed = positions.filter(pos => pos !== previous && pos !== previous2);
-        if (!allowed.length) allowed = positions.filter(pos => pos !== previous);
-        const newAnswer = allowed[Math.floor(Math.random() * allowed.length)];
-
-        // Trộn 3 đáp án sai vào các vị trí còn lại.
-        const shuffledWrong = shuffleArray(wrongOptions);
-        const newOptions = [];
-        let wi = 0;
-        for (let pos = 0; pos < 4; pos++) {
-          newOptions[pos] = pos === newAnswer ? correctText : shuffledWrong[wi++];
-        }
-
-        const result = { q: q.q, options: newOptions, answer: newAnswer };
-        result.__newAnswer = newAnswer;
-        return result;
-      }).map(q => {
-        delete q.__newAnswer;
-        return q;
-      });
+    // Giữ nguyên vị trí đáp án đúng theo bộ câu hỏi gốc.
+    // Không random lại mỗi lần mở MC / tải lại trang.
+    function keepFixedAnswerPositions(questions) {
+      return questions.map(q => ({
+        q: q.q,
+        options: [...q.options],
+        answer: q.answer
+      }));
     }
 
     function render(x) {
       state = x;
 
       // Bộ 30 câu Đại hội VIII + IX.
-      // V1: nội dung câu hỏi; V2: đã xáo vị trí đáp án đúng.
-      const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v2-answer-random";
+      // V3: vị trí đáp án đúng cố định theo bộ câu hỏi gốc.
+      const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v3-fixed-answer";
       const savedVersion = localStorage.getItem("duck_race_question_bank_version");
 
       if (!x.questions || x.questions.length === 0) {
-        x.questions = randomizeAnswerPositions(defaultQuestions);
+        x.questions = keepFixedAnswerPositions(defaultQuestions);
         if (!isAutoSynced) {
           isAutoSynced = true;
           localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
@@ -240,8 +218,8 @@
           socket.emit("saveQuestions", x.questions);
         }
       } else if (savedVersion !== QUESTION_BANK_VERSION && x.questions.length === 30) {
-        // Chuyển bộ câu hỏi hiện tại sang cơ chế đáp án ngẫu nhiên mới đúng 1 lần.
-        x.questions = randomizeAnswerPositions(x.questions);
+        // Xóa cơ chế random cũ và khôi phục đúng vị trí đáp án gốc.
+        x.questions = keepFixedAnswerPositions(defaultQuestions);
         localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
         localStorage.setItem("duck_race_questions", JSON.stringify(x.questions));
         socket.emit("saveQuestions", x.questions);
@@ -250,7 +228,7 @@
         localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
       }
 
-      // Render Bảng điểm nhóm
+    // Render Bảng điểm nhóm
       qs("teams").innerHTML = Object.values(x.teams).map(t => 
         `<tr><td><b>${t.name}</b></td><td>${t.correct}</td><td><b style="color:#38bdf8">${t.score}</b></td></tr>`
       ).join("");
@@ -345,7 +323,7 @@
 
     function nextQuestion() {
       if (!state || !state.questions.length) return alert("Vui lòng nhập câu hỏi trước.");
-      socket.emit("nextQuestion");
+      socket.emit("forceNextQuestion");
     }
 
     function selectAnswer(index) { /* Đã chuyển sang màn hình chiếu. */ }
