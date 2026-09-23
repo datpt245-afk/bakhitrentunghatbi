@@ -396,6 +396,7 @@
     #blindBoxArea { transition: all .25s ease; }
     #blindBoxArea.buff-active { padding: 18px; border-radius: 18px; background: linear-gradient(135deg, rgba(245,158,11,.10), rgba(168,85,247,.10), rgba(34,197,94,.08)); border:1px solid rgba(245,158,11,.35); }
 
+    /* Màn chiếu chỉ hiển thị điểm ngay trên từng chú vịt; không dùng bảng/thanh điểm riêng. */
     .scoreboard, .score-board, .score-panel, .score-bar, .team-score-bar, #scoreboard, #scoreBoard { display:none !important; }
   </style>
 </head>
@@ -409,29 +410,30 @@
         <li><strong>Tham gia:</strong> Tất cả người chơi dùng <strong>một link chuông chung</strong>, nhập tên và chọn Nhóm 1–5.</li>
         <li><strong>Giành quyền:</strong> Khi câu hỏi mở, ai bấm chuông trước sẽ giành quyền. Các chuông khác khóa lại.</li>
         <li><strong>Trả lời:</strong> Người giành quyền trả lời <strong>bằng miệng</strong>. MC chọn trực tiếp A/B/C/D trên màn chiếu để chấm.</li>
-        <li><strong>Trả lời sai:</strong> Thành viên đó sai thì <strong>cả nhóm mất quyền trả lời câu đó</strong>. Sau đúng 3 giây, chuông tự mở cho các nhóm còn lại.</li>
-        <li><strong>Trả lời đúng:</strong> Nhóm được <strong>+2 điểm và vịt tiến 2 ô</strong>. Người trả lời được +1 điểm cá nhân.</li>
+        <li><strong>Trả lời sai:</strong> Nếu một thành viên trả lời sai thì <strong>cả nhóm bị khóa cho câu đó</strong>. Sau đúng <strong>3 giây</strong>, chuông tự mở cho các nhóm còn lại.</li>
+        <li><strong>Trả lời đúng:</strong> Nhóm nhận <strong>+2 điểm và vịt tiến +2 ô</strong>. Người trả lời được +1 điểm cá nhân.</li>
         <li><strong>Câu có buff:</strong> Sau khi đúng, 3 hộp bí ẩn xuất hiện. Người chơi nói Hộp 1/2/3, MC bấm hộp tương ứng trên màn chiếu.</li>
-        <li><strong>Câu không có buff:</strong> Chỉ cộng điểm và tiến vịt, sau đó MC chủ động mở câu tiếp theo.</li>
-        <li><strong>Buff 1 – Cướp 2 điểm:</strong> Cướp tối đa 2 điểm từ một nhóm khác ngẫu nhiên; vịt nhóm bị cướp <strong>không lùi</strong>.</li>
+        <li><strong>Câu không có buff:</strong> Chỉ cộng điểm và tiến vịt. MC chủ động mở câu tiếp theo.</li>
+        <li><strong>Buff 1 – Cướp 2 điểm:</strong> Cướp tối đa 2 điểm từ một nhóm khác được chọn ngẫu nhiên. Nhóm bị cướp <strong>mất điểm và vịt lùi tương ứng</strong>.</li>
         <li><strong>Buff 2 – Nhân đôi điểm:</strong> Nhận thêm đúng số điểm nhóm vừa nhận từ câu hỏi đó; vịt tiến tương ứng.</li>
-        <li><strong>Buff 3 – Vấp đá:</strong> Mất 1 điểm nhưng <strong>vịt không lùi vị trí</strong>.</li>
-        <li><strong>Buff 4 – Hoán đổi điểm:</strong> Đổi toàn bộ điểm với một nhóm khác; <strong>không đổi vị trí vịt</strong>.</li>
+        <li><strong>Buff 3 – Vấp đá:</strong> Mất 1 điểm và <strong>vịt lùi 1 ô</strong>.</li>
+        <li><strong>Buff 4 – Hoán đổi điểm:</strong> Đổi toàn bộ điểm với một nhóm khác; <strong>vị trí hai con vịt cũng đổi theo</strong>.</li>
         <li><strong>Buff 5 – Tăng tốc:</strong> Vịt tiến 3 ô và nhóm nhận thêm 3 điểm.</li>
-        <li><strong>Buff 6 – Cân bằng điểm:</strong> Điểm nhóm nhận buff được đưa về bằng nhóm đang có điểm thấp nhất; <strong>không lùi vịt</strong>.</li>
+        <li><strong>Buff 6 – Cân bằng điểm:</strong> Điểm của nhóm nhận buff được đưa về bằng nhóm đang có điểm thấp nhất; <strong>vịt cũng lùi/điều chỉnh về đúng vị trí điểm mới</strong>.</li>
+        <li><strong>Tần suất buff:</strong> Có đúng <strong>12/31 câu</strong> được chọn ngẫu nhiên để có buff. Tỷ lệ 25% / 25% / 23% / 7% / 18% / 2% chỉ áp dụng khi hệ thống tạo lựa chọn trong 3 hộp.</li>
         <li><strong>Kết thúc:</strong> Có 31 câu. <strong>Không có vạch đích.</strong> Hết câu 31, nhóm có vịt đi xa nhất là nhóm thắng. Nếu bằng vị trí, xét điểm cao hơn.</li>
         <li><strong>Nhịp chơi:</strong> MC tự quyết định khi nào mở câu tiếp theo; không tự động chuyển câu sau khi hiệu ứng/buff kết thúc.</li>
       </ol>
-      <div class="point-box">🎁 <strong>12/31 câu</strong> được hệ thống chọn ngẫu nhiên để có buff mỗi ván.</div>
+      <div class="point-box">🎁 <strong>12/31 câu</strong> có buff mỗi ván. Hệ thống random lại 12 câu khi reset game.</div>
       <div class="lobby-status">⏳ ĐANG CHỜ MC BẤM BẮT ĐẦU TRÒ CHƠI...</div>
-      <div><button class="activate-sound-btn" onclick="startGameMusic();">🎵 Bấm vào đây để Bật Âm Thanh</button></div>
+      <div><button class="activate-sound-btn" onclick="startGameMusic(); initAudioContext();">🎵 Bấm vào đây để Bật Âm Thanh</button></div>
     </div>
   </div>
 
   <div id="effectLayer" class="effect-layer"></div>
 
   <div class="screen-container">
-    <button id="audioToggleBtn" class="audio-control-btn" onclick="toggleAudio()">🎵 Nhạc Game: BẬT</button>
+    <button id="audioToggleBtn" class="audio-control-btn" onclick="toggleAudio()">🎵 Nhạc Race: BẬT</button>
 
     <div class="status-banner">
       <div id="screenWinner" class="winner-title">🦆 ĐƯỜNG ĐUA VỊT 2D SẴN SÀNG!</div>
@@ -451,22 +453,23 @@
         🌊 BỂ BƠI THI ĐẤU TRỰC TIẾP
       </h2>
       <div id="blindBoxArea">
-        <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
-        <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
-        <div class="blind-grid">
-          <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">🎁</div><div class="label">HỘP 1</div></div>
-          <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">🎀</div><div class="label">HỘP 2</div></div>
-          <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
-        </div>
-        <div id="swapTargetPanel" class="swap-target-panel">
-          <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
-          <div id="swapTargetGrid" class="swap-target-grid"></div>
-        </div>
+      <div class="blind-title">🎁 CHỌN 1 HỘP BÍ ẨN</div>
+      <div class="blind-sub">Đội trả lời nói lựa chọn với MC. MC sẽ bấm hộp được chọn.</div>
+      <div class="blind-grid">
+        <div class="blind-box" id="blindBox0" onclick="selectBuffBox(0)"><div class="icon">🎁</div><div class="label">HỘP 1</div></div>
+        <div class="blind-box" id="blindBox1" onclick="selectBuffBox(1)"><div class="icon">🎀</div><div class="label">HỘP 2</div></div>
+        <div class="blind-box" id="blindBox2" onclick="selectBuffBox(2)"><div class="icon">💎</div><div class="label">HỘP 3</div></div>
       </div>
+      <div id="swapTargetPanel" class="swap-target-panel">
+        <div class="swap-target-title">🔄 CHỌN NHÓM ĐỂ HOÁN ĐỔI ĐIỂM</div>
+        <div id="swapTargetGrid" class="swap-target-grid"></div>
+      </div>
+    </div>
 
-      <div id="screenRace"></div>
+    <div id="screenRace"></div>
     </div>
   </div>
+
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -476,49 +479,138 @@
     let currentQuestionHasBuff = false;
 
     let soundEnabled = true;
+
+    // --- NHẠC NỀN RACE: soundtrack nhiều section để 31 câu không bị một loop nhàm chán ---
+    let audioCtx = null;
+    let gameMusicTimer = null;
+    let gameMusicStep = 0;
     let gameMusicRunning = false;
+    let musicSection = 0;
+    let musicBar = 0;
 
-    // --- QUẢN LÝ TẤT CẢ FILE ÂM THANH (.MP3) ---
-    // Đường dẫn trỏ tới thư mục /sounds/
-    const bgMusic = new Audio('/sounds/bgm.mp3');
-    bgMusic.loop = true;
-    bgMusic.volume = 0.3; // Âm lượng nhạc nền 30%
+    function initAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
 
-    const audioEffects = {
-      buzz: new Audio('/sounds/buzz.mp3'),
-      correct: new Audio('/sounds/correct.mp3'),
-      wrong: new Audio('/sounds/wrong.mp3'),
-      steal: new Audio('/sounds/steal.mp3'),
-      box: new Audio('/sounds/box.mp3'),
-      buff1: new Audio('/sounds/buff1.mp3'),
-      buff2: new Audio('/sounds/buff2.mp3'),
-      buff3: new Audio('/sounds/buff3.mp3'),
-      buff4: new Audio('/sounds/buff4.mp3'),
-      buff5: new Audio('/sounds/buff5.mp3'),
-      buff6: new Audio('/sounds/buff6.mp3')
-    };
+    function tone(freq, start, duration, type='sine', volume=0.18, endFreq=null) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      if (endFreq !== null) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), start + duration);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(start); osc.stop(start + duration + 0.02);
+    }
+
+    function noiseBurst(start, duration=0.06, volume=0.06, freq=1800) {
+      const buffer = audioCtx.createBuffer(1, Math.max(1, audioCtx.sampleRate * duration), audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i=0;i<data.length;i++) data[i] = Math.random()*2-1;
+      const src = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      filter.type='bandpass'; filter.frequency.value=freq; filter.Q.value=1.1;
+      gain.gain.setValueAtTime(volume, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start+duration);
+      src.buffer=buffer; src.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+      src.start(start); src.stop(start+duration);
+    }
 
     function playSound(type) {
       if (!soundEnabled) return;
-      const sound = audioEffects[type];
-      if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(err => console.warn(`Không thể phát âm thanh ${type}:`, err));
+      initAudioContext();
+      const now = audioCtx.currentTime;
+      if (type === 'buzz') {
+        tone(880,now,.18,'square',.22,1180); tone(1320,now+.03,.55,'sine',.16,1050); noiseBurst(now,.08,.06);
+      } else if (type === 'correct') {
+        [523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone(f,now+i*.10,.30,'triangle',.22));
+        tone(1046.5,now+.46,.65,'sine',.24);
+      } else if (type === 'wrong') {
+        tone(220,now,.22,'sawtooth',.22,150); tone(165,now+.18,.25,'sawtooth',.18,105); tone(110,now+.38,.38,'sawtooth',.16,70);
+      } else if (type === 'steal') {
+        tone(330,now,.18,'square',.12,660); tone(660,now+.18,.22,'triangle',.18,990); tone(990,now+.40,.50,'sine',.20);
+      } else if (type === 'box') {
+        [180,220,280,360,470,620].forEach((f,i)=>tone(f,now+i*.09,.16,'sine',.10)); noiseBurst(now+.50,.12,.05);
+      } else if (type === 'buff1') {
+        tone(392,now,.14,'square',.15,523); tone(523,now+.12,.14,'square',.15,659); tone(659,now+.24,.35,'triangle',.18,330);
+      } else if (type === 'buff2') {
+        [392,523,659,784,1046].forEach((f,i)=>tone(f,now+i*.08,.24,'triangle',.18)); tone(1046,now+.40,.55,'sine',.22);
+      } else if (type === 'buff3') {
+        tone(520,now,.18,'square',.16,350); tone(350,now+.16,.20,'square',.14,210); tone(210,now+.34,.35,'sawtooth',.14,90);
+      } else if (type === 'buff4') {
+        tone(180,now,.35,'sine',.13,900); tone(900,now+.28,.35,'sine',.13,180); tone(660,now+.55,.55,'triangle',.18);
+      } else if (type === 'buff5') {
+        tone(220,now,.65,'sawtooth',.12,1400); tone(880,now+.20,.55,'triangle',.16,1760); tone(1760,now+.45,.55,'sine',.20);
+      } else if (type === 'buff6') {
+        tone(440,now,.25,'triangle',.15,330); tone(330,now+.20,.28,'triangle',.14,220); tone(220,now+.42,.80,'sawtooth',.18,55);
       }
     }
 
+    // Nhạc nền race vui nhộn: nhiều section, đổi giai điệu + nhịp để chơi dài không bị nhàm.
+    // Thiết kế theo kiểu arcade/cartoon racing, mỗi section có bass, melody và fill riêng.
+    const raceMusic = [
+      { bpm:146, bass:[110,110,146,110,123,123,164,123], lead:[440,523,659,784,659,523,587,698], wave:'triangle' },
+      { bpm:154, bass:[98,98,123,147,110,110,147,165], lead:[392,494,587,659,784,659,587,494], wave:'square' },
+      { bpm:162, bass:[82,110,123,146,98,123,147,165], lead:[330,440,523,659,587,784,880,784], wave:'sawtooth' },
+      { bpm:170, bass:[123,123,164,196,146,146,196,220], lead:[494,587,784,988,880,784,988,1175], wave:'triangle' },
+      { bpm:158, bass:[98,123,147,123,110,131,165,131], lead:[392,523,659,784,659,523,698,880], wave:'square' },
+      { bpm:176, bass:[110,147,165,196,123,165,196,220], lead:[440,659,784,988,1175,988,1319,1175], wave:'sawtooth' },
+      { bpm:184, bass:[123,164,196,247,146,196,220,294], lead:[523,659,784,1046,1175,1319,1568,1760], wave:'triangle' },
+      { bpm:150, bass:[98,110,131,147,110,123,147,165], lead:[440,523,587,698,784,698,587,523], wave:'square' }
+    ];
+
+    function playGameMusicStep() {
+      if (!audioCtx || !soundEnabled) return;
+
+      const sectionIndex = Math.floor(gameMusicStep / 32) % raceMusic.length;
+      const section = raceMusic[sectionIndex];
+      const step = gameMusicStep % section.bass.length;
+      const now = audioCtx.currentTime;
+      const bass = section.bass[step];
+      const lead = section.lead[step];
+
+      tone(bass, now, 0.16, section.wave, 0.055, bass * 0.82);
+      if (step % 2 === 0) tone(lead, now, 0.13, 'square', 0.028);
+      if (step === 3 || step === 7) tone(lead * 1.5, now + 0.03, 0.08, 'triangle', 0.018);
+
+      if (step % 4 === 0) tone(55, now, 0.13, 'sine', 0.18, 30);
+      if (step === 2 || step === 6) noiseBurst(now, 0.06, 0.055, 1800);
+      if (step % 2 === 1) noiseBurst(now, 0.025, 0.020, 5000);
+
+      if (step === 7) {
+        tone(lead * 0.75, now, 0.07, 'triangle', 0.035, lead);
+        tone(lead, now + 0.07, 0.07, 'triangle', 0.04, lead * 1.2);
+        noiseBurst(now + 0.14, 0.08, 0.045, 2600);
+      }
+
+      if (gameMusicStep % 128 === 0 && gameMusicStep > 0) {
+        tone(lead * 2, now, 0.10, 'square', 0.025, lead * 2.5);
+      }
+
+      gameMusicStep++;
+      clearTimeout(gameMusicTimer);
+      gameMusicTimer = setTimeout(playGameMusicStep, 60000 / section.bpm / 2);
+    }
+
     function startGameMusic() {
-      if (!soundEnabled || gameMusicRunning) return;
-      bgMusic.play().then(() => {
-        gameMusicRunning = true;
-        qs("audioToggleBtn").textContent = "🎵 Nhạc Game: ĐANG PHÁT";
-      }).catch(err => {
-        console.warn("Chưa thể phát nhạc nền:", err);
-      });
+      initAudioContext();
+      if (!soundEnabled || !audioCtx || gameMusicRunning) return;
+      gameMusicRunning = true;
+      gameMusicStep = 0;
+      musicSection = 0;
+      playGameMusicStep();
+      qs("audioToggleBtn").textContent = "🎵 Nhạc Race: ĐANG PHÁT";
     }
 
     function stopGameMusic() {
-      bgMusic.pause();
+      if (gameMusicTimer) {
+        clearTimeout(gameMusicTimer);
+        gameMusicTimer = null;
+      }
       gameMusicRunning = false;
     }
 
@@ -527,7 +619,7 @@
       const btn = qs("audioToggleBtn");
       if (soundEnabled) {
         startGameMusic();
-        btn.textContent = "🎵 Nhạc Game: ĐANG PHÁT";
+        btn.textContent = "🎵 Nhạc Race: ĐANG PHÁT";
         btn.style.background = "rgba(56, 189, 248, 0.2)";
         btn.style.color = "#38bdf8";
       } else {
@@ -538,16 +630,19 @@
       }
     }
 
+    // Không còn bộ đếm tự động: MC kiểm soát toàn bộ nhịp độ trò chơi.
     function start5SecTimer() { qs("timerDisplay").classList.remove("active"); }
     function stop5SecTimer() { qs("timerDisplay").classList.remove("active"); }
 
     window.addEventListener('click', () => { 
+      initAudioContext(); 
       startGameMusic(); 
     }, { once: true });
 
     // Cấu hình Bảng màu định danh chuẩn xác theo Số Nhóm (Group ID)
     const teamColors = {
       "1": { body: "#EF4444", wing: "#B91C1C", name: "Nhóm 1 (Đỏ)" },
+      "2": { body: "#38BDF8", wing: "#0369A1", name: "Nhóm 2 (Xanh)" },
       "3": { body: "#22C55E", wing: "#15803D", name: "Nhóm 3 (Lá)" },
       "4": { body: "#FACC15", wing: "#CA8A04", name: "Nhóm 4 (Vàng)" },
       "5": { body: "#A855F7", wing: "#7E22CE", name: "Nhóm 5 (Tím)" }
@@ -588,6 +683,7 @@
     });
 
     function setQuestionVisible(visible) {
+      // Màn chiếu luôn giữ câu hỏi + A/B/C/D + đường đua cùng lúc.
       const card = document.querySelector('.q-card');
       const race = document.querySelector('.race-track');
       if (card) card.classList.remove('temporarily-hidden');
@@ -613,11 +709,13 @@
       }).join("");
     }
 
+    // MC điều khiển trực tiếp trên màn hình chiếu. Người chơi chỉ trả lời bằng miệng.
     function selectScreenAnswer(index) {
       if (!currentGameState?.activeResponder || currentGameState?.pendingAnswer || currentGameState?.pendingBuff) return;
       socket.emit("mcSelectAnswer", { index });
     }
 
+    // Người chơi chỉ nói lựa chọn với MC; MC click hộp tương ứng trên màn hình chiếu.
     function selectBuffBox(choice) {
       if (!currentGameState?.pendingBuff || currentGameState.pendingBuff.chosen) return;
       socket.emit("chooseBuff", { choice });
@@ -674,6 +772,8 @@
       let rawTeams = Array.isArray(x.teams) ? x.teams : Object.entries(x.teams).map(([k, v]) => ({ key: k, ...v }));
       const activeTeams = rawTeams;
 
+      // Vịt chỉ tiến về phía trước theo duckPos; không co giãn theo đội dẫn đầu
+      // để khi đội khác vượt lên, vị trí của vịt cũ không bị "lùi" trên màn chiếu.
       qs("screenRace").innerHTML = activeTeams.map(t => {
         const score = Number(t.score) || 0;
         const duckPos = Number(t.duckPos) || 0;
@@ -691,7 +791,8 @@
               <div class="water-ripple"></div>
               ${getDuckSVG(c.body, c.wing)}
             </div>
-          </div>
+
+                </div>
         `;
       }).join("");
     }
@@ -731,6 +832,7 @@
       startGameMusic();
     });
 
+    // --- CHUÔNG: chỉ giành quyền, không có đồng hồ ép trả lời ---
     socket.on("buzzed", x => {
       playSound('buzz');
       qs("screenWinner").textContent = `🚨 ${x.name.toUpperCase()} (NHÓM ${x.group}) GIÀNH QUYỀN TRẢ LỜI!`;
@@ -807,6 +909,7 @@
     });
 
     socket.on("buffRevealedMC", x => {
+      // Compatibility with older server payloads that may omit the box index.
       if (x && x.choice !== undefined) {
         const choice = Number(x.choice);
         qs("blindBoxArea").style.display = "block";
@@ -824,11 +927,11 @@
       if (Number(x.buffId) === 1) {
         showStealHit(x);
         qs("screenWinner").textContent = `🔨 NHÓM ${x.group} CƯỚP 2 ĐIỂM TỪ NHÓM ${x.targetGroup || "không có mục tiêu"}!`;
-        qs("screenStatus").textContent = x.amount ? `BONK! Cướp ${x.amount} điểm và chuyển về nhóm ${x.group}.` : "Không có nhóm nào đủ điểm để cướp.";
+        qs("screenStatus").textContent = x.amount ? `BONK! Cướp ${x.amount} điểm — vịt nhóm ${x.group} tiến, vịt nhóm ${x.targetGroup} lùi tương ứng.` : "Không có nhóm nào đủ điểm để cướp.";
       } else if (Number(x.buffId) === 3) {
         showStoneHit(x);
         qs("screenWinner").textContent = `🪨 NHÓM ${x.group} VẤP ĐÁ!`;
-        qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm!";
+        qs("screenStatus").textContent = "💥 Vịt đâm vào hòn đá — mất 1 điểm và lùi 1 ô!";
       } else if (Number(x.buffId) === 4) {
         qs("swapTargetPanel").style.display = "none";
         qs("screenWinner").textContent = `🔄 NHÓM ${x.group} ↔ NHÓM ${x.targetGroup}`;
