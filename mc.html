@@ -287,8 +287,6 @@
       if (!state) return;
       const nextIdx = state.currentQuestion + 1;
       const btn = qs("nextBtn");
-      const buffStillNeedsTarget = !!state.pendingBuff && state.pendingBuff.buffId === 4 && !state.pendingBuff.target;
-      const busy = !!state.activeResponder || !!state.pendingAnswer || buffStillNeedsTarget;
       if (!state.questions.length) {
         btn.textContent = "▶️ MỞ CÂU ĐẦU TIÊN";
         btn.disabled = true;
@@ -296,8 +294,11 @@
         btn.textContent = "🏁 ĐÃ HẾT CÂU HỎI";
         btn.disabled = true;
       } else {
-        btn.textContent = state.currentQuestion < 0 ? "▶️ MỞ CÂU ĐẦU TIÊN" : `▶️ MỞ CÂU TIẾP THEO (${nextIdx + 1})`;
-        btn.disabled = busy;
+        btn.textContent = state.currentQuestion < 0
+          ? "▶️ MỞ CÂU ĐẦU TIÊN"
+          : `⏭️ CHUYỂN NGAY SANG CÂU ${nextIdx + 1}`;
+        // MC luôn được phép bỏ qua trạng thái đang xử lý của câu hiện tại.
+        btn.disabled = false;
       }
     }
 
