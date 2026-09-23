@@ -10,7 +10,9 @@
 <script src="/socket.io/socket.io.js"></script><script>
 let group="";const s=io();let name="";let currentState=null;
 const groupSelect=document.getElementById("groupSelect");
-team.textContent="NHẬP THÔNG TIN ĐỂ VÀO CHUÔNG";
+const teamEl=document.getElementById("team");
+const statusEl=document.getElementById("status");
+teamEl.textContent="NHẬP THÔNG TIN ĐỂ VÀO CHUÔNG";
 
 // Tự động khôi phục tên nếu đã từng nhập
 window.addEventListener("DOMContentLoaded", () => {
@@ -27,102 +29,133 @@ window.addEventListener("DOMContentLoaded", () => {
 function join(){
   name=document.getElementById("name").value.trim();
   group=groupSelect.value;
-  if(!name)return alert("Nhập tên trước nhé!");
-  team.textContent="NHÓM "+group;
+  if(!name){ alert("Nhập tên trước nhé!"); return; }
   sessionStorage.setItem("userName", name);
   sessionStorage.setItem("userGroup", group);
+  teamEl.textContent="NHÓM "+group;
+  statusEl.textContent="⏳ Đang kết nối với máy chủ...";
   s.emit("joinMember",{group,name});
+}
+
+function updateBuzzButton(st = currentState) {
+  const btn = document.getElementById("buzz");
+  if (!btn) return;
+
+  // Có người đã giành quyền trả lời -> KHÓA TẤT CẢ chuông khác.
+  // Server cũng kiểm tra điều kiện này để chống spam/race condition.
+  if (st && st.activeResponder) {
+    btn.disabled = true;
+    if (String(st.activeResponder.group) === String(group)) {
+      statusEl.textContent = "🚨 Bạn đang giữ quyền trả lời. Chờ MC xác nhận đáp án.";
+    } else {
+      statusEl.textContent = `🔒 Nhóm ${st.activeResponder.group} đang trả lời... Chuông của bạn đã bị khóa.`;
+    }
+    return;
+  }
+
+  const isLocked = st && st.lockedGroups && st.lockedGroups.includes(String(group));
+  if (isLocked) {
+    btn.disabled = true;
+    statusEl.textContent = "❌ Nhóm bạn đã bị khóa ở câu hỏi này.";
+    return;
+  }
+
+  // Không có người giữ quyền: cho phép bấm.
+  btn.disabled = false;
+  if (st && !st.questionOpen) {
+    statusEl.textContent = "⏳ Đã vào chuông — đang chờ MC mở câu hỏi. Có thể bấm sẵn!";
+  }
 }
 
 s.on("joined",x=>{
   document.getElementById("join").style.display="none";
   document.getElementById("play").style.display="block";
   document.getElementById("me").textContent="👤 "+x.name+" • Nhóm "+group;
+  updateBuzzButton(currentState);
 });
 
 function buzz(){
+  // Khóa ngay trên máy người chơi để không spam nhiều lần liên tiếp.
   document.getElementById("buzz").disabled=true;
   s.emit("buzz",{group,name});
 }
 
 s.on("buzzed",x=>{
-  document.getElementById("buzz").disabled=true;
-  if(x.group === group) {
-    status.textContent=`🚨 Bạn đã giành quyền! MC sẽ gọi bạn đứng dậy để trả lời trực tiếp.`;
-  } else {
-    status.textContent=`🔒 Nhóm ${x.group} đang trả lời...`;
-  }
+  currentState = currentState || {};
+  currentState.activeResponder = x;
+  updateBuzzButton(currentState);
 });
 
 s.on("questionOpened",()=>{
-  document.getElementById("buzz").disabled=false;
-  status.textContent="🔔 Câu hỏi đã mở — bấm thật nhanh!";
+  if (currentState) currentState.questionOpen = true;
+  updateBuzzButton(currentState);
+  if (!currentState || !currentState.activeResponder) {
+    statusEl.textContent="🔔 Câu hỏi đã mở — bấm thật nhanh!";
+  }
 });
 
 s.on("resetBuzz",()=>{
-  const btn = document.getElementById("buzz");
-  if(!btn.disabled) {
-    status.textContent="🔔 Chuông đã mở lại — bấm cướp quyền!";
+  updateBuzzButton(currentState);
+  if (currentState && !currentState.activeResponder) {
+    statusEl.textContent="🔔 Chuông đã mở lại — bấm cướp quyền!";
   }
 });
 
 s.on("wrong",x=>{
   if(x.group === group) {
     document.getElementById("buzz").disabled=true;
-    status.textContent="❌ MC đã xác nhận sai. Nhóm bạn bị khóa lượt câu này.";
+    statusEl.textContent="❌ MC đã xác nhận sai. Nhóm bạn bị khóa lượt câu này.";
   } else {
-    status.textContent=`🔔 Nhóm ${x.group} trả lời sai. Chờ MC quyết định mở cướp quyền.`;
+    statusEl.textContent=`🔔 Nhóm ${x.group} trả lời sai. Chờ MC mở cướp quyền.`;
+  }
+  if (currentState) {
+    currentState.activeResponder = null;
+    if (!currentState.lockedGroups) currentState.lockedGroups=[];
+    if (!currentState.lockedGroups.includes(String(x.group))) currentState.lockedGroups.push(String(x.group));
+    updateBuzzButton(currentState);
   }
 });
 
 s.on("buffChoiceOpened", x=>{
   if(String(x.group)!==String(group)) return;
   document.getElementById("buzz").disabled=true;
-  status.textContent="🎁 Đội bạn trả lời đúng. Hãy nói với MC bạn chọn hộp 1, 2 hoặc 3.";
+  statusEl.textContent="🎁 Đội bạn trả lời đúng. Hãy nói với MC bạn chọn hộp 1, 2 hoặc 3.";
 });
 s.on("buffBoxChosen", x=>{
   if(String(x.group)!==String(group)) return;
-  status.textContent=`🎁 MC đã chọn hộp ${Number(x.choice)+1} theo lựa chọn của đội bạn.`;
+  statusEl.textContent=`🎁 MC đã chọn hộp ${Number(x.choice)+1} theo lựa chọn của đội bạn.`;
 });
 s.on("buffRevealed", x=>{
   if(String(x.group)!==String(group)) return;
-  status.textContent=`🎉 ${x.buff.name}: ${x.buff.desc}`;
+  statusEl.textContent=`🎉 ${x.buff.name}: ${x.buff.desc}`;
 });
 s.on("buffApplied", x=>{
   if(x.group && String(x.group)!==String(group)) return;
-  status.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo.";
+  statusEl.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo.";
 });
-s.on("buffFinished", ()=>{ status.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo."; });
+s.on("buffFinished", ()=>{ statusEl.textContent="✅ Buff đã áp dụng. Chờ MC mở câu tiếp theo."; });
 
 s.on("state", st => {
   currentState=st;
-  const btn = document.getElementById("buzz");
-  if (!st.questionOpen) {
-    btn.disabled = false;
-    status.textContent = "⏳ Đã vào chuông — đang chờ MC mở câu hỏi. Có thể bấm sẵn!";
-    return;
-  }
-  const isLocked = st.lockedGroups && st.lockedGroups.includes(String(group));
-  if (st.activeResponder) {
-    btn.disabled = true;
-  } else if (isLocked) {
-    btn.disabled = true;
-    status.textContent = "❌ Nhóm bạn đã bị khóa ở câu hỏi này.";
-  } else {
-    btn.disabled = false;
-  }
+  updateBuzzButton(st);
 });
 
 s.on("stealOpened", () => {
-  const btn=document.getElementById("buzz");
-  const st=currentState;
-  btn.disabled=false;
-  status.textContent="🔔 MC đã mở cướp quyền — bấm chuông cho cùng câu hỏi!";
+  if (currentState) {
+    currentState.questionOpen = true;
+    currentState.activeResponder = null;
+  }
+  updateBuzzButton(currentState);
+  statusEl.textContent="🔔 MC đã mở cướp quyền — bấm chuông cho cùng câu hỏi!";
 });
 
 s.on("questionSkipped", () => {
+  if (currentState) {
+    currentState.questionOpen = false;
+    currentState.activeResponder = null;
+  }
   document.getElementById("buzz").disabled=true;
-  status.textContent = "⏭️ Câu hỏi đã kết thúc. Chờ MC mở câu tiếp theo.";
+  statusEl.textContent = "⏭️ Câu hỏi đã kết thúc. Chờ MC mở câu tiếp theo.";
 });
 
 s.on("fullReset", () => {
