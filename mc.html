@@ -191,20 +191,60 @@
       return shuffled;
     }
 
+    // Xáo vị trí đáp án đúng nhưng giữ nguyên nội dung 4 đáp án.
+    // Quy tắc: không để 3 câu liên tiếp có đáp án đúng cùng một vị trí.
+    function randomizeAnswerPositions(questions) {
+      return questions.map((q, i) => {
+        const correctText = q.options[q.answer];
+        const wrongOptions = q.options.filter((_, idx) => idx !== q.answer);
+        const positions = [0, 1, 2, 3];
+
+        // Chọn vị trí mới, tránh trùng vị trí của 2 câu ngay trước đó.
+        const previous = i >= 1 ? questions[i - 1].__newAnswer : -1;
+        const previous2 = i >= 2 ? questions[i - 2].__newAnswer : -1;
+        let allowed = positions.filter(pos => pos !== previous && pos !== previous2);
+        if (!allowed.length) allowed = positions.filter(pos => pos !== previous);
+        const newAnswer = allowed[Math.floor(Math.random() * allowed.length)];
+
+        // Trộn 3 đáp án sai vào các vị trí còn lại.
+        const shuffledWrong = shuffleArray(wrongOptions);
+        const newOptions = [];
+        let wi = 0;
+        for (let pos = 0; pos < 4; pos++) {
+          newOptions[pos] = pos === newAnswer ? correctText : shuffledWrong[wi++];
+        }
+
+        const result = { q: q.q, options: newOptions, answer: newAnswer };
+        result.__newAnswer = newAnswer;
+        return result;
+      }).map(q => {
+        delete q.__newAnswer;
+        return q;
+      });
+    }
+
     function render(x) {
       state = x;
 
-      // Đồng bộ đúng bộ 30 câu Đại hội VIII + IX vào Server.
-      // Nếu Server đang rỗng, vẫn render ngay bộ 30 câu trên MC rồi đồng bộ lên Server.
-      const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v1";
+      // Bộ 30 câu Đại hội VIII + IX.
+      // V1: nội dung câu hỏi; V2: đã xáo vị trí đáp án đúng.
+      const QUESTION_BANK_VERSION = "dai-hoi-viii-ix-30-v2-answer-random";
+      const savedVersion = localStorage.getItem("duck_race_question_bank_version");
+
       if (!x.questions || x.questions.length === 0) {
-        x.questions = defaultQuestions.slice();
+        x.questions = randomizeAnswerPositions(defaultQuestions);
         if (!isAutoSynced) {
           isAutoSynced = true;
           localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
-          localStorage.setItem("duck_race_questions", JSON.stringify(defaultQuestions));
-          socket.emit("saveQuestions", defaultQuestions);
+          localStorage.setItem("duck_race_questions", JSON.stringify(x.questions));
+          socket.emit("saveQuestions", x.questions);
         }
+      } else if (savedVersion !== QUESTION_BANK_VERSION && x.questions.length === 30) {
+        // Chuyển bộ câu hỏi hiện tại sang cơ chế đáp án ngẫu nhiên mới đúng 1 lần.
+        x.questions = randomizeAnswerPositions(x.questions);
+        localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
+        localStorage.setItem("duck_race_questions", JSON.stringify(x.questions));
+        socket.emit("saveQuestions", x.questions);
       } else {
         localStorage.setItem("duck_race_questions", JSON.stringify(x.questions));
         localStorage.setItem("duck_race_question_bank_version", QUESTION_BANK_VERSION);
