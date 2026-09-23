@@ -16,73 +16,43 @@ app.use(express.static(__dirname));
 const BUFFS = {
   1: {
     name: "Cướp 2 điểm",
-    desc: "Trừ 2 điểm từ một đội khác được chọn ngẫu nhiên.",
+    desc: "Trừ tối đa 2 điểm từ một đội khác được chọn.",
     rare: false
   },
   2: {
     name: "Nhân đôi điểm",
-    desc: "Nhân đôi số điểm vừa nhận từ câu hỏi này.",
+    desc: "Nhận thêm 2 điểm.",
     rare: false
   },
   3: {
     name: "Vấp đá",
-    desc: "Vịt đâm vào hòn đá, mất 1 điểm và lùi 1 ô.",
+    desc: "Mất 1 điểm và lùi 1 ô.",
     rare: false
   },
   4: {
     name: "Hoán đổi điểm",
-    desc: "Đổi toàn bộ điểm với một đội khác.",
+    desc: "Đổi toàn bộ điểm và vị trí với một đội khác.",
     rare: false
   },
   5: {
     name: "Tăng tốc",
-    desc: "Vịt của đội tiến 3 ô và nhận thêm 3 điểm.",
+    desc: "Tiến 3 ô và nhận thêm 3 điểm.",
     rare: false
   },
   6: {
     name: "Cân bằng điểm",
-    desc: "Điểm của đội được đưa về bằng với đội đang có ít điểm nhất.",
+    desc: "Điểm của đội được đưa về bằng đội có ít điểm nhất.",
     rare: true
   }
 };
 
 let game = {
   teams: {
-    1: {
-      name: "Nhóm 1",
-      score: 0,
-      correct: 0,
-      duckPos: 0,
-      members: {}
-    },
-    2: {
-      name: "Nhóm 2",
-      score: 0,
-      correct: 0,
-      duckPos: 0,
-      members: {}
-    },
-    4: {
-      name: "Nhóm 4",
-      score: 0,
-      correct: 0,
-      duckPos: 0,
-      members: {}
-    },
-    5: {
-      name: "Nhóm 5",
-      score: 0,
-      correct: 0,
-      duckPos: 0,
-      members: {}
-    },
-    6: {
-      name: "Nhóm 6",
-      score: 0,
-      correct: 0,
-      duckPos: 0,
-      members: {}
-    }
+    1: { name: "Nhóm 1", score: 0, correct: 0, duckPos: 0, members: {} },
+    2: { name: "Nhóm 2", score: 0, correct: 0, duckPos: 0, members: {} },
+    4: { name: "Nhóm 4", score: 0, correct: 0, duckPos: 0, members: {} },
+    5: { name: "Nhóm 5", score: 0, correct: 0, duckPos: 0, members: {} },
+    6: { name: "Nhóm 6", score: 0, correct: 0, duckPos: 0, members: {} }
   },
 
   questions: [],
@@ -94,8 +64,8 @@ let game = {
 
   pendingAnswer: null,
   wrongPending: null,
-
   answerRevealed: false,
+
   pendingBuff: null,
 
   scoring: {
@@ -111,22 +81,19 @@ let game = {
   },
 
   lastStealTarget: null,
+
   buffQuestionIndexes: []
 };
 
 function loadQuestions() {
   try {
     if (fs.existsSync(DATA_FILE)) {
-      const data = JSON.parse(
+      game.questions = JSON.parse(
         fs.readFileSync(DATA_FILE, "utf8")
       );
-
-      if (Array.isArray(data)) {
-        game.questions = data;
-      }
     }
   } catch (err) {
-    console.log("Không thể load questions.json:", err.message);
+    console.error("Không đọc được questions.json:", err);
     game.questions = [];
   }
 }
@@ -139,7 +106,7 @@ function saveQuestionsToFile() {
       "utf8"
     );
   } catch (err) {
-    console.log("Không thể lưu questions.json:", err.message);
+    console.error("Không lưu được questions.json:", err);
   }
 }
 
@@ -177,11 +144,7 @@ function randomizeBuffQuestions() {
 
   for (let i = indexes.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-
-    [indexes[i], indexes[j]] = [
-      indexes[j],
-      indexes[i]
-    ];
+    [indexes[i], indexes[j]] = [indexes[j], indexes[i]];
   }
 
   game.buffQuestionIndexes = indexes
@@ -202,10 +165,8 @@ function triggerNextQuestion() {
   game.activeResponder = null;
   game.lockedGroups = [];
 
-  if (
-    game.currentQuestion + 1 <
-    game.questions.length
-  ) {
+  if (game.currentQuestion + 1 < game.questions.length) {
+
     if (
       game.currentQuestion === -1 ||
       !game.buffQuestionIndexes.length
@@ -219,12 +180,12 @@ function triggerNextQuestion() {
 
     io.emit("questionOpened", {
       index: game.currentQuestion,
-      question: game.questions[
-        game.currentQuestion
-      ],
+      question: game.questions[game.currentQuestion],
       hasBuff: currentQuestionHasBuff()
     });
+
   } else {
+
     game.questionOpen = false;
 
     const ranking = Object.entries(game.teams)
@@ -251,6 +212,7 @@ function triggerNextQuestion() {
 
 function teamRanking() {
   return Object.keys(game.teams).sort((a, b) => {
+
     const scoreDiff =
       (Number(game.teams[b].score) || 0) -
       (Number(game.teams[a].score) || 0);
@@ -267,12 +229,11 @@ function buff6WeightForGroup(group) {
   const rank =
     teamRanking().indexOf(String(group)) + 1;
 
-  return (
-    [8, 5, 2, 0.7, 0.2][rank - 1] || 0.2
-  );
+  return [8, 5, 2, 0.7, 0.2][rank - 1] || 0.2;
 }
 
 function weightedBuffForGroup(group) {
+
   const weights = {
     1: 25,
     2: 25,
@@ -282,21 +243,14 @@ function weightedBuffForGroup(group) {
     6: 2 * buff6WeightForGroup(group)
   };
 
-  const total = Object.values(weights).reduce(
-    (a, b) => a + b,
-    0
-  );
+  const total =
+    Object.values(weights)
+      .reduce((a, b) => a + b, 0);
 
   let r = Math.random() * total;
 
-  for (const id of [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6"
-  ]) {
+  for (const id of ["1", "2", "3", "4", "5", "6"]) {
+
     r -= weights[id];
 
     if (r <= 0) {
@@ -308,10 +262,10 @@ function weightedBuffForGroup(group) {
 }
 
 function makeBuffChoices(group) {
-  game.boxStats.openedSince4++;
-  game.boxStats.openedSince6++;
 
-  // Buff 4: ít nhất 2 lần trong game
+  game.boxStats.openedSince4 += 1;
+  game.boxStats.openedSince6 += 1;
+
   if (
     game.boxStats.selected4 < 2 &&
     game.boxStats.openedSince4 >= 12
@@ -319,7 +273,6 @@ function makeBuffChoices(group) {
     return [4, 4, 4];
   }
 
-  // Buff 6: ít nhất 1 lần trong game
   const responderRank =
     teamRanking().indexOf(String(group)) + 1;
 
@@ -339,12 +292,12 @@ function makeBuffChoices(group) {
 }
 
 function otherGroups(group) {
-  return Object.keys(game.teams).filter(
-    g => g !== String(group)
-  );
+  return Object.keys(game.teams)
+    .filter(g => g !== String(group));
 }
 
 function awardCorrect() {
+
   const r = game.activeResponder;
 
   if (!r || !game.pendingAnswer) {
@@ -354,22 +307,24 @@ function awardCorrect() {
   const g = String(r.group);
   const team = game.teams[g];
 
-  const base = Math.max(
-    1,
-    Number(game.scoring.teamStep) || 1
-  );
+  const base =
+    Math.max(
+      1,
+      Number(game.scoring.teamStep) || 1
+    );
 
   team.score += base;
   team.duckPos += base;
   team.correct += 1;
 
   if (team.members[r.name]) {
-    const personalPoint = Math.max(
-      1,
-      Number(game.scoring.personalPoint) || 1
-    );
 
-    team.members[r.name].score += personalPoint;
+    team.members[r.name].score +=
+      Math.max(
+        1,
+        Number(game.scoring.personalPoint) || 1
+      );
+
     team.members[r.name].correct += 1;
   }
 
@@ -383,15 +338,18 @@ function awardCorrect() {
     name: r.name,
     group: g,
     teamStep: base,
-    personalPoint: Math.max(
-      1,
-      Number(game.scoring.personalPoint) || 1
-    ),
+    personalPoint:
+      Math.max(
+        1,
+        Number(game.scoring.personalPoint) || 1
+      ),
     hasBuff
   });
 
   if (hasBuff) {
-    const buffChoices = makeBuffChoices(g);
+
+    const buffChoices =
+      makeBuffChoices(g);
 
     game.pendingBuff = {
       group: g,
@@ -406,7 +364,9 @@ function awardCorrect() {
       name: r.name,
       choices: buffChoices
     });
+
   } else {
+
     game.pendingBuff = null;
     game.activeResponder = null;
     game.pendingAnswer = null;
@@ -416,6 +376,7 @@ function awardCorrect() {
 }
 
 function awardWrong(timedOut = false) {
+
   const r = game.activeResponder;
 
   if (!r) {
@@ -445,8 +406,8 @@ function awardWrong(timedOut = false) {
 
   io.emit("state", snapshot());
 
-  // Sau đúng 3 giây mở chuông cho các nhóm còn lại.
   setTimeout(() => {
+
     if (
       !game.wrongPending ||
       String(game.wrongPending.group) !== g
@@ -465,389 +426,365 @@ function awardWrong(timedOut = false) {
     });
 
     io.emit("state", snapshot());
+
   }, 3000);
 }
 
 io.on("connection", socket => {
+
   socket.emit("state", snapshot());
 
-  // =========================
-  // JOIN
-  // =========================
+  socket.on("joinMember", ({ group, name }) => {
 
-  socket.on(
-    "joinMember",
-    ({ group, name }) => {
-      const g = String(group);
-      const mName = String(
-        name || ""
-      ).trim();
+    const g = String(group);
+    const mName = String(name || "").trim();
 
-      if (
-        game.teams[g] &&
-        mName
-      ) {
-        if (!game.teams[g].members[mName]) {
-          game.teams[g].members[mName] = {
-            score: 0,
-            correct: 0
-          };
-        }
+    if (
+      game.teams[g] &&
+      mName
+    ) {
 
-        socket.emit("joined", {
-          group: g,
-          name: mName
-        });
+      if (!game.teams[g].members[mName]) {
 
-        io.emit(
-          "state",
-          snapshot()
-        );
+        game.teams[g].members[mName] = {
+          score: 0,
+          correct: 0
+        };
       }
+
+      socket.emit("joined", {
+        group: g,
+        name: mName
+      });
+
+      io.emit("state", snapshot());
     }
-  );
+  });
 
-  // =========================
-  // SAVE QUESTIONS
-  // =========================
+  socket.on("saveQuestions", questions => {
 
-  socket.on(
-    "saveQuestions",
-    questions => {
-      if (!Array.isArray(questions)) {
-        return;
-      }
+    if (!Array.isArray(questions)) {
+      return;
+    }
 
-      game.questions = questions
-        .map(q => ({
-          q: String(q.q || "").trim(),
+    game.questions = questions
+      .map(q => ({
+        q: String(q.q || "").trim(),
 
-          options: Array.isArray(q.options)
-            ? q.options
-                .slice(0, 4)
-                .map(x => String(x).trim())
-            : [],
+        options: Array.isArray(q.options)
+          ? q.options
+              .slice(0, 4)
+              .map(x => String(x).trim())
+          : [],
 
-          answer: Math.max(
-            0,
-            Math.min(
-              3,
-              Number(q.answer) || 0
-            )
+        answer: Math.max(
+          0,
+          Math.min(
+            3,
+            Number(q.answer) || 0
           )
-        }))
-        .filter(
-          q =>
-            q.q &&
-            q.options.length === 4 &&
-            q.options.every(Boolean)
-        );
-
-      saveQuestionsToFile();
-
-      io.emit(
-        "questionsSaved",
-        game.questions
+        )
+      }))
+      .filter(q =>
+        q.q &&
+        q.options.length === 4 &&
+        q.options.every(Boolean)
       );
 
-      io.emit(
-        "state",
-        snapshot()
-      );
-    }
-  );
+    saveQuestionsToFile();
 
-  // =========================
-  // FORCE NEXT QUESTION
-  // =========================
+    io.emit(
+      "questionsSaved",
+      game.questions
+    );
+
+    io.emit(
+      "state",
+      snapshot()
+    );
+  });
 
   function forceNextQuestion() {
-    // Cho MC chuyển câu ngay lập tức.
-    // Không phụ thuộc vào trạng thái hiện tại.
 
     game.activeResponder = null;
     game.lockedGroups = [];
-
     game.pendingAnswer = null;
     game.wrongPending = null;
     game.pendingBuff = null;
-
     game.answerRevealed = false;
     game.questionOpen = false;
 
     triggerNextQuestion();
   }
 
-  // MC hiện tại dùng forceNextQuestion
-  socket.on(
-    "forceNextQuestion",
-    forceNextQuestion
-  );
-
-  // Giữ tương thích với MC cũ
   socket.on(
     "nextQuestion",
     forceNextQuestion
   );
 
-  // =========================
-  // BUZZ
-  // =========================
-
   socket.on(
-    "buzz",
-    ({ group, name }) => {
-      const g = String(group);
-      const mName = String(
-        name || ""
-      ).trim();
-
-      if (
-        !game.teams[g] ||
-        !mName ||
-        game.activeResponder ||
-        game.lockedGroups.includes(g)
-      ) {
-        return;
-      }
-
-      // Cho phép bấm chuông trước khi MC mở câu.
-      game.activeResponder = {
-        group: g,
-        name: mName,
-        socketId: socket.id
-      };
-
-      game.pendingAnswer = null;
-
-      io.emit("buzzed", {
-        group: g,
-        name: mName
-      });
-
-      io.emit(
-        "state",
-        snapshot()
-      );
-    }
+    "forceNextQuestion",
+    forceNextQuestion
   );
 
-  // =========================
-  // MC CHỌN A/B/C/D
-  // =========================
+  socket.on("buzz", ({ group, name }) => {
 
-  socket.on(
-    "mcSelectAnswer",
-    ({ index }) => {
-      if (
-        !game.activeResponder ||
-        game.pendingAnswer ||
-        game.pendingBuff
-      ) {
-        return;
-      }
+    const g = String(group);
+    const mName = String(name || "").trim();
 
-      const currentQ =
-        game.questions[
-          game.currentQuestion
-        ];
-
-      if (
-        !currentQ ||
-        !Number.isInteger(index) ||
-        index < 0 ||
-        index > 3
-      ) {
-        return;
-      }
-
-      game.pendingAnswer = {
-        index,
-        name:
-          game.activeResponder.name,
-        group:
-          String(
-            game.activeResponder.group
-          )
-      };
-
-      io.emit(
-        "answerSelected",
-        game.pendingAnswer
-      );
-
-      const isCorrect =
-        index === currentQ.answer;
-
-      if (isCorrect) {
-        awardCorrect();
-      } else {
-        awardWrong(false);
-      }
+    if (
+      !game.teams[g] ||
+      !mName ||
+      game.activeResponder ||
+      game.lockedGroups.includes(g)
+    ) {
+      return;
     }
-  );
 
-  // =========================
-  // CHO ĐỘI KHÁC CƯỚP
-  // =========================
+    game.activeResponder = {
+      group: g,
+      name: mName,
+      socketId: socket.id
+    };
 
-  socket.on(
-    "allowSteal",
-    () => {
-      if (
-        game.pendingBuff ||
-        !game.wrongPending
-      ) {
-        return;
-      }
+    game.pendingAnswer = null;
 
-      game.wrongPending = null;
-      game.activeResponder = null;
-      game.pendingAnswer = null;
-      game.questionOpen = true;
+    io.emit("buzzed", {
+      group: g,
+      name: mName
+    });
 
-      io.emit("stealOpened");
+    io.emit("state", snapshot());
+  });
 
-      io.emit(
-        "state",
-        snapshot()
-      );
+  socket.on("mcSelectAnswer", ({ index }) => {
+
+    if (
+      !game.activeResponder ||
+      game.pendingAnswer ||
+      game.pendingBuff
+    ) {
+      return;
     }
-  );
 
-  // =========================
-  // BỎ QUA CÂU
-  // =========================
+    const currentQ =
+      game.questions[game.currentQuestion];
 
-  socket.on(
-    "skipQuestion",
-    () => {
-      if (game.pendingBuff) {
-        return;
-      }
-
-      clearPending();
-
-      game.answerRevealed = true;
-      game.questionOpen = false;
-      game.activeResponder = null;
-
-      io.emit(
-        "questionSkipped"
-      );
-
-      io.emit(
-        "state",
-        snapshot()
-      );
+    if (
+      !currentQ ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index > 3
+    ) {
+      return;
     }
-  );
 
-  // =========================
-  // CHỌN HỘP BUFF
-  // =========================
+    game.pendingAnswer = {
+      index,
+      name: game.activeResponder.name,
+      group: String(
+        game.activeResponder.group
+      )
+    };
 
-  socket.on(
-    "chooseBuff",
-    ({ choice }) => {
-      const p = game.pendingBuff;
+    io.emit(
+      "answerSelected",
+      game.pendingAnswer
+    );
 
-      if (
-        !p ||
-        p.chosen ||
-        Number(choice) < 0 ||
-        Number(choice) > 2
-      ) {
-        return;
-      }
+    const isCorrect =
+      index === currentQ.answer;
 
-      p.chosen = true;
-      p.choice = Number(choice);
+    if (isCorrect) {
+      awardCorrect();
+    } else {
+      awardWrong(false);
+    }
+  });
 
-      io.emit(
-        "buffBoxChosen",
-        {
-          group: p.group,
-          name: p.name,
-          choice: Number(choice)
-        }
-      );
+  socket.on("allowSteal", () => {
 
-      const buffId =
-        p.buffChoices[
-          Number(choice)
-        ];
+    if (
+      game.pendingBuff ||
+      !game.wrongPending
+    ) {
+      return;
+    }
 
-      p.buffId = buffId;
+    game.wrongPending = null;
+    game.activeResponder = null;
+    game.pendingAnswer = null;
+    game.questionOpen = true;
 
-      if (buffId === 4) {
-        game.boxStats.selected4++;
-        game.boxStats.openedSince4 = 0;
-      }
+    io.emit("stealOpened");
+    io.emit("state", snapshot());
+  });
 
-      if (buffId === 6) {
-        game.boxStats.selected6++;
-        game.boxStats.openedSince6 = 0;
-      }
+  socket.on("skipQuestion", () => {
 
-      io.emit(
-        "buffRevealed",
-        {
-          group: p.group,
-          name: p.name,
-          choice: Number(choice),
-          buffId,
-          buff: BUFFS[buffId],
-          choices: p.buffChoices
-        }
-      );
+    if (game.pendingBuff) {
+      return;
+    }
 
-      io.emit(
-        "buffRevealedMC",
-        {
-          group: p.group,
-          name: p.name,
-          choice: Number(choice),
-          buffId,
-          buff: BUFFS[buffId],
-          choices: p.buffChoices
-        }
-      );
+    clearPending();
+
+    game.answerRevealed = true;
+    game.questionOpen = false;
+    game.activeResponder = null;
+
+    io.emit("questionSkipped");
+    io.emit("state", snapshot());
+  });
+
+  /*
+   * ================================
+   * CHỌN HỘP BUFF
+   * ================================
+   */
+
+  socket.on("chooseBuff", ({ choice }) => {
+
+    const p = game.pendingBuff;
+
+    if (
+      !p ||
+      p.chosen ||
+      Number(choice) < 0 ||
+      Number(choice) > 2
+    ) {
+      return;
+    }
+
+    p.chosen = true;
+    p.choice = Number(choice);
+
+    io.emit("buffBoxChosen", {
+      group: p.group,
+      name: p.name,
+      choice: Number(choice)
+    });
+
+    const buffId =
+      p.buffChoices[Number(choice)];
+
+    p.buffId = buffId;
+
+    if (buffId === 4) {
+      game.boxStats.selected4 += 1;
+    }
+
+    if (buffId === 6) {
+      game.boxStats.selected6 += 1;
+    }
+
+    if (buffId === 4) {
+      game.boxStats.openedSince4 = 0;
+    }
+
+    if (buffId === 6) {
+      game.boxStats.openedSince6 = 0;
+    }
+
+    io.emit("buffRevealed", {
+      group: p.group,
+      name: p.name,
+      choice: Number(choice),
+      buffId,
+      buff: BUFFS[buffId],
+      choices: p.buffChoices
+    });
+
+    io.emit("buffRevealedMC", {
+      group: p.group,
+      name: p.name,
+      choice: Number(choice),
+      buffId,
+      buff: BUFFS[buffId],
+      choices: p.buffChoices
+    });
+
+    /*
+     * BUFF 1 + BUFF 4
+     * KHÔNG TỰ RANDOM MỤC TIÊU.
+     * Màn hình chiếu sẽ hiện các nhóm
+     * để MC click mục tiêu.
+     */
+
+    if (
+      buffId === 1 ||
+      buffId === 4
+    ) {
+
+      let targetGroups =
+        otherGroups(p.group);
+
+      /*
+       * Buff 1 chỉ cho chọn nhóm
+       * đang có điểm > 0.
+       */
 
       if (buffId === 1) {
-        applyBuff1(p);
-      } else if (buffId === 2) {
-        applyBuff2(p);
-      } else if (buffId === 3) {
-        applyBuff3(p);
-      } else if (buffId === 5) {
-        applyBuff5(p);
-      } else if (buffId === 6) {
-        applyBuff6(p);
+
+        targetGroups =
+          targetGroups.filter(
+            g =>
+              (Number(
+                game.teams[g].score
+              ) || 0) > 0
+          );
       }
 
-      // Buff 4 chờ chọn đội để đổi điểm.
-
       io.emit(
-        "state",
-        snapshot()
+        "buffTargetSelection",
+        {
+          group: p.group,
+          name: p.name,
+          buffId,
+          targetGroups
+        }
       );
-    }
-  );
 
-  // =========================
-  // BUFF 4 - ĐỔI ĐIỂM
-  // =========================
+    } else if (buffId === 2) {
+
+      applyBuff2(p);
+
+    } else if (buffId === 3) {
+
+      applyBuff3(p);
+
+    } else if (buffId === 5) {
+
+      applyBuff5(p);
+
+    } else if (buffId === 6) {
+
+      applyBuff6(p);
+    }
+
+    io.emit(
+      "state",
+      snapshot()
+    );
+  });
+
+  /*
+   * ================================
+   * CHỌN MỤC TIÊU BUFF 1 / BUFF 4
+   * ================================
+   */
 
   socket.on(
-    "chooseSwapTarget",
+    "chooseBuffTarget",
     ({ targetGroup }) => {
+
       const p = game.pendingBuff;
 
       if (
         !p ||
         !p.chosen ||
-        p.buffId !== 4
+        ![1, 4].includes(
+          Number(p.buffId)
+        )
       ) {
         return;
       }
@@ -857,189 +794,171 @@ io.on("connection", socket => {
 
       if (
         !game.teams[to] ||
-        to === from
+        to === from ||
+        !otherGroups(from).includes(to)
       ) {
         return;
       }
 
-      const a = game.teams[from];
-      const b = game.teams[to];
+      /*
+       * BUFF 1:
+       * Cướp tối đa 2 điểm.
+       */
 
-      [a.score, b.score] = [
-        b.score,
-        a.score
-      ];
+      if (Number(p.buffId) === 1) {
 
-      // Swap cả vị trí vịt
-      [a.duckPos, b.duckPos] = [
-        b.duckPos,
-        a.duckPos
-      ];
+        const amount =
+          Math.min(
+            2,
+            Math.max(
+              0,
+              Number(
+                game.teams[to].score
+              ) || 0
+            )
+          );
 
-      io.emit(
-        "buffApplied",
-        {
+        if (amount <= 0) {
+          return;
+        }
+
+        game.lastStealTarget = to;
+
+        /*
+         * Đội bị cướp:
+         * điểm -2
+         * vịt -2
+         */
+
+        game.teams[to].score -= amount;
+
+        game.teams[to].duckPos -= amount;
+
+        /*
+         * Đội cướp:
+         * điểm +2
+         * vịt +2
+         */
+
+        game.teams[from].score += amount;
+
+        game.teams[from].duckPos += amount;
+
+        io.emit("buffApplied", {
+          group: from,
+          buffId: 1,
+          targetGroup: to,
+          amount
+        });
+
+      }
+
+      /*
+       * BUFF 4:
+       * Đổi cả điểm và vị trí vịt.
+       */
+
+      else {
+
+        const a = game.teams[from];
+        const b = game.teams[to];
+
+        [a.score, b.score] =
+          [b.score, a.score];
+
+        [a.duckPos, b.duckPos] =
+          [b.duckPos, a.duckPos];
+
+        io.emit("buffApplied", {
           group: from,
           buffId: 4,
           targetGroup: to
-        }
-      );
+        });
+      }
 
       finishBuff();
+
+      io.emit(
+        "state",
+        snapshot()
+      );
     }
   );
 
-  // =========================
-  // BUFF 1
-  // =========================
-
-  function applyBuff1(p) {
-    let choices = otherGroups(
-      p.group
-    ).filter(
-      g =>
-        game.teams[g].score > 0
-    );
-
-    if (
-      choices.length > 1 &&
-      game.lastStealTarget &&
-      choices.includes(
-        String(game.lastStealTarget)
-      )
-    ) {
-      choices = choices.filter(
-        g =>
-          g !==
-          String(
-            game.lastStealTarget
-          )
-      );
-    }
-
-    if (choices.length) {
-      const target =
-        choices[
-          Math.floor(
-            Math.random() *
-              choices.length
-          )
-        ];
-
-      game.lastStealTarget =
-        target;
-
-      const amount = Math.min(
-        2,
-        game.teams[target].score
-      );
-
-      game.teams[target].score -=
-        amount;
-
-      game.teams[target].duckPos -=
-        amount;
-
-      game.teams[p.group].score +=
-        amount;
-
-      game.teams[p.group].duckPos +=
-        amount;
-
-      io.emit(
-        "buffApplied",
-        {
-          group: p.group,
-          buffId: 1,
-          targetGroup: target,
-          amount
-        }
-      );
-    } else {
-      io.emit(
-        "buffApplied",
-        {
-          group: p.group,
-          buffId: 1,
-          targetGroup: null,
-          amount: 0
-        }
-      );
-    }
-
-    finishBuff();
-  }
-
-  // =========================
-  // BUFF 2
-  // =========================
+  /*
+   * ================================
+   * BUFF 2
+   * ================================
+   */
 
   function applyBuff2(p) {
-    const amount = Math.max(
-      1,
-      Number(
-        game.scoring.teamStep
-      ) || 1
-    );
 
-    game.teams[p.group].score +=
-      amount;
+    const amount =
+      Math.max(
+        1,
+        Number(
+          game.scoring.teamStep
+        ) || 1
+      );
 
-    game.teams[p.group].duckPos +=
-      amount;
+    game.teams[p.group].score += amount;
 
-    io.emit(
-      "buffApplied",
-      {
-        group: p.group,
-        buffId: 2,
-        amount
-      }
-    );
+    game.teams[p.group].duckPos += amount;
+
+    io.emit("buffApplied", {
+      group: p.group,
+      buffId: 2,
+      amount
+    });
 
     finishBuff();
   }
 
-  // =========================
-  // BUFF 3
-  // =========================
+  /*
+   * ================================
+   * BUFF 3
+   * ================================
+   */
 
   function applyBuff3(p) {
+
     const team =
       game.teams[p.group];
 
     const hitPos =
       Number(team.duckPos) || 0;
 
-    team.score = Math.max(
-      0,
-      Number(team.score) - 1
-    );
+    team.score =
+      Math.max(
+        0,
+        Number(team.score) - 1
+      );
 
-    team.duckPos = Math.max(
-      0,
-      Number(team.duckPos) - 1
-    );
+    team.duckPos =
+      Math.max(
+        0,
+        Number(team.duckPos) - 1
+      );
 
-    io.emit(
-      "buffApplied",
-      {
-        group: p.group,
-        buffId: 3,
-        amount: -1,
-        scoreLost: 1,
-        hitPos
-      }
-    );
+    io.emit("buffApplied", {
+      group: p.group,
+      buffId: 3,
+      amount: -1,
+      scoreLost: 1,
+      hitPos
+    });
 
     finishBuff();
   }
 
-  // =========================
-  // BUFF 5
-  // =========================
+  /*
+   * ================================
+   * BUFF 5
+   * ================================
+   */
 
   function applyBuff5(p) {
+
     const team =
       game.teams[p.group];
 
@@ -1048,35 +967,34 @@ io.on("connection", socket => {
     team.score += amount;
     team.duckPos += amount;
 
-    io.emit(
-      "buffApplied",
-      {
-        group: p.group,
-        buffId: 5,
-        amount,
-        scoreAdded: amount
-      }
-    );
+    io.emit("buffApplied", {
+      group: p.group,
+      buffId: 5,
+      amount,
+      scoreAdded: amount
+    });
 
     finishBuff();
   }
 
-  // =========================
-  // BUFF 6
-  // =========================
+  /*
+   * ================================
+   * BUFF 6
+   * ================================
+   */
 
   function applyBuff6(p) {
+
     const ranked =
       teamRanking();
 
     const lowestScore =
       Math.min(
-        ...Object.values(
-          game.teams
-        ).map(
-          t =>
-            Number(t.score) || 0
-        )
+        ...Object.values(game.teams)
+          .map(
+            t =>
+              Number(t.score) || 0
+          )
       );
 
     const lowestGroups =
@@ -1084,15 +1002,14 @@ io.on("connection", socket => {
         g =>
           (Number(
             game.teams[g].score
-          ) || 0) ===
-          lowestScore
+          ) || 0) === lowestScore
       );
 
     const target =
       lowestGroups[
         Math.floor(
           Math.random() *
-            lowestGroups.length
+          lowestGroups.length
         )
       ];
 
@@ -1102,45 +1019,43 @@ io.on("connection", socket => {
     const oldScore =
       Number(team.score) || 0;
 
-    team.score =
-      lowestScore;
+    /*
+     * Buff 6 đưa cả score và duckPos
+     * về mức điểm thấp nhất.
+     */
 
-    // Vịt đi cùng điểm
-    team.duckPos =
-      lowestScore;
+    team.score = lowestScore;
+    team.duckPos = lowestScore;
 
-    io.emit(
-      "buffApplied",
-      {
-        group: p.group,
-        buffId: 6,
-        targetGroup: target,
-        oldScore,
-        newScore: lowestScore
-      }
-    );
+    io.emit("buffApplied", {
+      group: p.group,
+      buffId: 6,
+      targetGroup: target,
+      oldScore,
+      newScore: lowestScore
+    });
 
     finishBuff();
   }
 
-  // =========================
-  // KẾT THÚC BUFF
-  // =========================
+  /*
+   * ================================
+   * KẾT THÚC BUFF
+   * ================================
+   */
 
   function finishBuff() {
+
     const responderSocket =
       game.activeResponder?.socketId;
 
     if (responderSocket) {
-      io.to(
-        responderSocket
-      ).emit(
-        "buffFinished",
-        {
+
+      io.to(responderSocket)
+        .emit("buffFinished", {
           group:
             game.pendingBuff?.group
-        }
-      );
+        });
     }
 
     game.pendingBuff = null;
@@ -1153,37 +1068,31 @@ io.on("connection", socket => {
     );
   }
 
-  // =========================
-  // RESET BUZZ
-  // =========================
+  /*
+   * ================================
+   * RESET BUZZ
+   * ================================
+   */
 
-  socket.on(
-    "resetBuzz",
-    () => {
-      game.activeResponder = null;
-      game.pendingAnswer = null;
+  socket.on("resetBuzz", () => {
 
-      io.emit(
-        "resetBuzz"
-      );
+    game.activeResponder = null;
+    game.pendingAnswer = null;
 
-      io.emit(
-        "state",
-        snapshot()
-      );
-    }
-  );
+    io.emit("resetBuzz");
+    io.emit("state", snapshot());
+  });
 
-  // =========================
-  // SET SCORING
-  // =========================
+  /*
+   * ================================
+   * SCORING
+   * ================================
+   */
 
   socket.on(
     "setScoring",
-    ({
-      teamStep,
-      personalPoint
-    }) => {
+    ({ teamStep, personalPoint }) => {
+
       game.scoring.teamStep =
         Math.max(
           1,
@@ -1203,16 +1112,17 @@ io.on("connection", socket => {
     }
   );
 
-  // =========================
-  // RESET GAME
-  // =========================
+  /*
+   * ================================
+   * RESET GAME
+   * ================================
+   */
 
-  socket.on(
-    "resetGame",
-    () => {
-      Object.keys(
-        game.teams
-      ).forEach(g => {
+  socket.on("resetGame", () => {
+
+    Object.keys(game.teams)
+      .forEach(g => {
+
         game.teams[g] = {
           name: `Nhóm ${g}`,
           score: 0,
@@ -1222,45 +1132,41 @@ io.on("connection", socket => {
         };
       });
 
-      game.currentQuestion = -1;
-      game.questionOpen = false;
+    game.currentQuestion = -1;
+    game.questionOpen = false;
+    game.activeResponder = null;
+    game.lockedGroups = [];
+    game.pendingAnswer = null;
+    game.wrongPending = null;
+    game.answerRevealed = false;
+    game.pendingBuff = null;
 
-      game.activeResponder = null;
-      game.lockedGroups = [];
+    game.boxStats = {
+      openedSince4: 0,
+      openedSince6: 0,
+      selected4: 0,
+      selected6: 0
+    };
 
-      game.pendingAnswer = null;
-      game.wrongPending = null;
+    game.lastStealTarget = null;
 
-      game.answerRevealed = false;
-      game.pendingBuff = null;
+    game.buffQuestionIndexes = [];
 
-      game.boxStats = {
-        openedSince4: 0,
-        openedSince6: 0,
-        selected4: 0,
-        selected6: 0
-      };
+    /*
+     * QUAN TRỌNG:
+     * Không xóa game.questions.
+     * Không xóa questions.json.
+     */
 
-      game.lastStealTarget = null;
-      game.buffQuestionIndexes = [];
-
-      io.emit(
-        "fullReset"
-      );
-
-      io.emit(
-        "state",
-        snapshot()
-      );
-    }
-  );
+    io.emit("fullReset");
+    io.emit("state", snapshot());
+  });
 });
 
 server.listen(
   PORT,
-  () => {
+  () =>
     console.log(
       `🚀 Server đang chạy tại port ${PORT}`
-    );
-  }
+    )
 );
